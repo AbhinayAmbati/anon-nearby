@@ -1,10 +1,15 @@
 <template>
   <div id="app" class="min-h-screen bg-gray-900 text-green-400 font-mono">
     <!-- Debug info -->
-    <div class="fixed top-4 left-4 text-xs bg-black bg-opacity-50 p-2 rounded z-50">
-      State: {{ appState }}<br>
-      Codename: {{ userCodename }}<br>
-      Socket: {{ socketConnected ? 'Connected' : 'Disconnected' }}
+    <div class="fixed top-2 left-2 text-xs bg-black bg-opacity-50 p-1 sm:p-2 rounded z-50 text-green-400 font-mono">
+      <div class="hidden sm:block">
+        State: {{ appState }}<br>
+        Codename: {{ userCodename }}<br>
+        Socket: {{ socketConnected ? 'Connected' : 'Disconnected' }}
+      </div>
+      <div class="sm:hidden">
+        {{ appState.charAt(0).toUpperCase() + appState.slice(1) }}
+      </div>
     </div>
     
     <!-- Matrix background effect -->
@@ -25,53 +30,53 @@
       <!-- Permission State -->
       <div 
         v-else-if="appState === 'permission'"
-        class="flex items-center justify-center min-h-screen p-8"
+        class="flex items-center justify-center min-h-screen p-4 sm:p-8"
       >
-        <div class="text-center max-w-md">
-          <div class="mb-8">
-            <h1 class="text-2xl font-mono font-bold text-green-400 mb-4 tracking-widest">
+        <div class="text-center max-w-sm sm:max-w-md w-full">
+          <div class="mb-6 sm:mb-8">
+            <h1 class="text-xl sm:text-2xl lg:text-3xl font-mono font-bold text-green-400 mb-3 sm:mb-4 tracking-widest">
               ANON-NEARBY
             </h1>
-            <div class="w-16 h-16 mx-auto mb-4 border-2 border-green-400 rounded-full flex items-center justify-center">
-              <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 border-2 border-green-400 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 sm:w-8 sm:h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
           </div>
           
-          <div class="space-y-4 text-sm">
+          <div class="space-y-3 sm:space-y-4 text-sm sm:text-base px-4">
             <p class="text-green-400/80">
               Connect anonymously with people near you.
             </p>
-            <p class="text-green-400/60">
+            <p class="text-green-400/60 text-xs sm:text-sm">
               No accounts. No history. No traces.
             </p>
           </div>
           
           <button
             @click="requestLocationPermission"
-            class="mt-8 px-6 py-3 bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold tracking-wider"
+            class="mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 w-full sm:w-auto bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold tracking-wider text-sm sm:text-base"
           >
             ENTER THE GRID
           </button>
           
-          <div v-if="error" class="mt-4 text-red-400 text-xs">
+          <div v-if="error" class="mt-3 sm:mt-4 text-red-400 text-xs sm:text-sm px-2">
             {{ error }}
           </div>
         </div>
       </div>
       
       <!-- Scanning State -->
-      <div v-else-if="appState === 'scanning'" class="flex items-center justify-center min-h-screen p-8">
+      <div v-else-if="appState === 'scanning'" class="flex items-center justify-center min-h-screen p-4 sm:p-8">
         <div class="text-center">
-          <h2 class="text-xl font-mono font-bold text-green-400 mb-4">{{ userCodename }}</h2>
-          <p class="text-green-400/70 mb-6">Scanning for nearby nodes...</p>
-          <div class="w-32 h-32 mx-auto relative">
+          <h2 class="text-lg sm:text-xl font-mono font-bold text-green-400 mb-3 sm:mb-4 px-4">{{ userCodename }}</h2>
+          <p class="text-green-400/70 mb-4 sm:mb-6 text-sm sm:text-base px-4">Scanning for nearby nodes...</p>
+          <div class="w-24 h-24 sm:w-32 sm:h-32 mx-auto relative">
             <!-- Radar circles -->
             <div class="absolute inset-0 border border-green-400/30 rounded-full animate-ping"></div>
-            <div class="absolute inset-4 border border-green-400/50 rounded-full animate-ping" style="animation-delay: 0.5s"></div>
-            <div class="absolute inset-8 border border-green-400/70 rounded-full animate-ping" style="animation-delay: 1s"></div>
+            <div class="absolute inset-3 sm:inset-4 border border-green-400/50 rounded-full animate-ping" style="animation-delay: 0.5s"></div>
+            <div class="absolute inset-6 sm:inset-8 border border-green-400/70 rounded-full animate-ping" style="animation-delay: 1s"></div>
             <!-- Center dot -->
             <div class="absolute top-1/2 left-1/2 w-2 h-2 bg-green-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
           </div>
@@ -79,47 +84,47 @@
       </div>
 
       <!-- Chat State -->
-      <div v-else-if="appState === 'chatting'" class="min-h-screen bg-gray-800 p-4">
-        <div class="max-w-4xl mx-auto">
-          <div class="bg-gray-900 rounded-lg border border-green-400/30 overflow-hidden">
+      <div v-else-if="appState === 'chatting'" class="flex flex-col h-screen bg-gray-800">
+        <div class="flex-1 flex flex-col max-w-sm sm:max-w-2xl lg:max-w-4xl mx-auto w-full p-6 sm:p-4">
+          <div class="bg-gray-900 rounded-lg border border-green-400/30 overflow-hidden flex flex-col h-full">
             <!-- Chat header -->
-            <div class="bg-gray-800 px-4 py-3 border-b border-green-400/30 flex justify-between items-center">
+            <div class="bg-gray-800 px-3 sm:px-4 py-2 sm:py-3 border-b border-green-400/30 flex justify-between items-center flex-shrink-0">
               <div class="flex items-center space-x-2">
                 <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span class="text-green-400 font-mono">Connected to {{ partnerCodename }}</span>
+                <span class="text-green-400 font-mono text-sm sm:text-base truncate">Connected to {{ partnerCodename }}</span>
               </div>
               <button 
                 @click="disconnectFromChat" 
-                class="text-red-400 hover:text-red-300 font-mono text-sm"
+                class="text-red-400 hover:text-red-300 font-mono text-xs sm:text-sm flex-shrink-0 ml-2"
               >
-                DISCONNECT
+                <span class="hidden sm:inline">DISCONNECT</span>
               </button>
             </div>
             
             <!-- Messages area -->
-            <div class="h-96 p-4 overflow-y-auto bg-gray-900" ref="messagesContainer">
-              <div v-if="messages.length === 0" class="text-center text-green-400/60 py-8">
+            <div class="flex-1 p-3 sm:p-4 overflow-y-auto bg-gray-900" ref="messagesContainer">
+              <div v-if="messages.length === 0" class="text-center text-green-400/60 py-4 sm:py-8 text-sm sm:text-base">
                 Start your anonymous conversation...
               </div>
-              <div v-for="(message, index) in messages" :key="index" class="mb-4">
+              <div v-for="(message, index) in messages" :key="index" class="mb-3 sm:mb-4">
                 <div class="text-xs text-green-400/60 mb-1">{{ message.from }}</div>
-                <div class="text-green-400 font-mono">{{ message.message }}</div>
+                <div class="text-green-400 font-mono text-sm sm:text-base break-words">{{ message.message }}</div>
               </div>
             </div>
             
             <!-- Input area -->
-            <div class="bg-gray-800 px-4 py-3 border-t border-green-400/30">
+            <div class="bg-gray-800 p-3 sm:px-4 sm:py-3 border-t border-green-400/30 flex-shrink-0">
               <form @submit.prevent="sendChatMessage" class="flex space-x-2">
                 <input
                   v-model="messageInput"
                   type="text"
                   placeholder="Type your message..."
-                  class="flex-1 bg-gray-900 border border-green-400/30 text-green-400 px-3 py-2 rounded font-mono focus:outline-none focus:border-green-400"
+                  class="flex-1 bg-gray-900 border border-green-400/30 text-green-400 px-2 sm:px-3 py-2 rounded font-mono focus:outline-none focus:border-green-400 text-sm sm:text-base"
                   :disabled="!connected"
                 />
                 <button 
                   type="submit" 
-                  class="px-4 py-2 bg-green-400/20 text-green-400 border border-green-400/30 rounded hover:bg-green-400/30 font-mono"
+                  class="px-3 sm:px-4 py-2 bg-green-400/20 text-green-400 border border-green-400/30 rounded hover:bg-green-400/30 font-mono text-xs sm:text-sm flex-shrink-0"
                   :disabled="!messageInput.trim() || !connected"
                 >
                   SEND
@@ -128,21 +133,23 @@
             </div>
           </div>
         </div>
+        <!-- Chat footer spacer to account for global footer -->
+        <div class="h-8 sm:h-10 flex-shrink-0"></div>
       </div>      <!-- Disconnected State -->
       <div
         v-else-if="appState === 'disconnected'"
-        class="flex items-center justify-center min-h-screen p-8"
+        class="flex items-center justify-center min-h-screen p-4 sm:p-8"
       >
-        <div class="text-center max-w-md">
-          <h2 class="text-xl font-mono font-bold text-green-400 mb-4">
+        <div class="text-center max-w-sm sm:max-w-md w-full">
+          <h2 class="text-lg sm:text-xl font-mono font-bold text-green-400 mb-3 sm:mb-4">
             CONNECTION TERMINATED
           </h2>
-          <p class="text-green-400/70 mb-6 text-sm">
+          <p class="text-green-400/70 mb-4 sm:mb-6 text-sm sm:text-base px-4">
             Your chat partner has disconnected.
           </p>
           <button
             @click="returnToScanning"
-            class="px-6 py-3 bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold tracking-wider"
+            class="px-4 sm:px-6 py-2 sm:py-3 w-full sm:w-auto bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold tracking-wider text-sm sm:text-base"
           >
             SCAN AGAIN
           </button>
@@ -151,31 +158,33 @@
     </div>
     
     <!-- Footer -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-80 border-t border-green-400/20 px-4 py-2 z-40">
-      <div class="flex justify-center items-center space-x-4 text-xs text-green-400/60">
-        <span>&copy; 2025 ANON-NEARBY</span>
-        <span>•</span>
+    <footer class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-80 border-t border-green-400/20 px-2 sm:px-4 py-1 sm:py-2 z-40">
+      <div class="flex justify-center items-center space-x-2 sm:space-x-4 text-xs text-green-400/60">
+        <span class="hidden sm:inline">&copy; 2025 ANON-NEARBY</span>
+        <span class="hidden sm:inline">•</span>
         <button @click="showTerms = true" class="hover:text-green-400 transition-colors">
-          Terms of Service
+          <span class="sm:hidden">Terms</span>
+          <span class="hidden sm:inline">Terms of Service</span>
         </button>
         <span>•</span>
         <button @click="showPrivacy = true" class="hover:text-green-400 transition-colors">
-          Privacy Policy
+          <span class="sm:hidden">Privacy</span>
+          <span class="hidden sm:inline">Privacy Policy</span>
         </button>
-        <span>•</span>
-        <span>Anonymous • Ephemeral • Secure</span>
+        <span class="hidden sm:inline">•</span>
+        <span class="hidden sm:inline">Anonymous • Ephemeral • Secure</span>
       </div>
     </footer>
 
     <!-- Terms Modal -->
-    <div v-if="showTerms" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div class="bg-gray-900 border border-green-400/30 rounded-lg max-w-2xl w-full max-h-96 overflow-y-auto">
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-mono font-bold text-green-400">Terms of Service</h2>
-            <button @click="showTerms = false" class="text-green-400 hover:text-red-400">✕</button>
+    <div v-if="showTerms" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div class="bg-gray-900 border border-green-400/30 rounded-lg max-w-2xl w-full max-h-[90vh] sm:max-h-96 overflow-y-auto">
+        <div class="p-4 sm:p-6">
+          <div class="flex justify-between items-center mb-3 sm:mb-4">
+            <h2 class="text-lg sm:text-xl font-mono font-bold text-green-400">Terms of Service</h2>
+            <button @click="showTerms = false" class="text-green-400 hover:text-red-400 text-xl">✕</button>
           </div>
-          <div class="text-green-400/80 font-mono text-sm space-y-4">
+          <div class="text-green-400/80 font-mono text-xs sm:text-sm space-y-3 sm:space-y-4">
             <p><strong>1. Anonymous Service</strong><br>
             ANON-NEARBY is a completely anonymous chat service. We do not collect, store, or track personal information.</p>
             
@@ -199,14 +208,14 @@
     </div>
 
     <!-- Privacy Policy Modal -->
-    <div v-if="showPrivacy" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div class="bg-gray-900 border border-green-400/30 rounded-lg max-w-2xl w-full max-h-96 overflow-y-auto">
-        <div class="p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-mono font-bold text-green-400">Privacy Policy</h2>
-            <button @click="showPrivacy = false" class="text-green-400 hover:text-red-400">✕</button>
+    <div v-if="showPrivacy" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div class="bg-gray-900 border border-green-400/30 rounded-lg max-w-2xl w-full max-h-[90vh] sm:max-h-96 overflow-y-auto">
+        <div class="p-4 sm:p-6">
+          <div class="flex justify-between items-center mb-3 sm:mb-4">
+            <h2 class="text-lg sm:text-xl font-mono font-bold text-green-400">Privacy Policy</h2>
+            <button @click="showPrivacy = false" class="text-green-400 hover:text-red-400 text-xl">✕</button>
           </div>
-          <div class="text-green-400/80 font-mono text-sm space-y-4">
+          <div class="text-green-400/80 font-mono text-xs sm:text-sm space-y-3 sm:space-y-4">
             <p><strong>Data We Collect:</strong><br>
             • Temporary location coordinates (for proximity matching only)<br>
             • Auto-generated session identifiers<br>
@@ -500,8 +509,15 @@ body {
   overflow-x: hidden;
 }
 
+/* Responsive scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+}
+
+@media (min-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
 }
 
 ::-webkit-scrollbar-track {
@@ -515,5 +531,48 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #4ade80;
+}
+
+/* Ensure proper touch targets on mobile */
+@media (max-width: 639px) {
+  button {
+    min-height: 44px;
+  }
+  
+  input {
+    min-height: 44px;
+  }
+}
+
+/* Fix viewport on mobile */
+@media screen and (max-width: 767px) {
+  .min-h-screen {
+    min-height: 100dvh; /* Use dynamic viewport height for mobile */
+  }
+}
+
+/* Improve text readability on small screens */
+@media (max-width: 479px) {
+  .font-mono {
+    font-size: 14px;
+  }
+  
+  .tracking-widest {
+    letter-spacing: 0.1em;
+  }
+}
+
+/* Animation performance optimization */
+@media (prefers-reduced-motion: reduce) {
+  .animate-ping,
+  .animate-pulse {
+    animation: none;
+  }
+}
+
+/* Dark mode scrollbar for Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #166534 #111827;
 }
 </style>
