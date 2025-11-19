@@ -7,8 +7,11 @@ export default defineNuxtConfig({
   ],
   runtimeConfig: {
     public: {
-      socketUrl: process.env.SOCKET_URL || 'http://localhost:3001'
+      socketUrl: 'http://localhost:3001'
     }
   },
-  ssr: false // Disable SSR for real-time features
+  ssr: false, // Disable SSR for real-time features
+  typescript: {
+    typeCheck: false // Disable type checking for faster builds
+  }
 })

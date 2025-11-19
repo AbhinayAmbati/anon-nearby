@@ -1,5 +1,12 @@
 <template>
   <div id="app" class="min-h-screen bg-gray-900 text-green-400 font-mono">
+    <!-- Debug info -->
+    <div class="fixed top-4 left-4 text-xs bg-black bg-opacity-50 p-2 rounded z-50">
+      State: {{ appState }}<br>
+      Codename: {{ userCodename }}<br>
+      Socket: {{ socketConnected ? 'Connected' : 'Disconnected' }}
+    </div>
+    
     <!-- Matrix background effect -->
     <MatrixBackground />
     
@@ -56,23 +63,72 @@
       </div>
       
       <!-- Scanning State -->
-      <ScanningMode
-        v-else-if="appState === 'scanning'"
-        :codename="userCodename"
-        :status-text="'Location acquired. Searching for nearby nodes...'"
-      />
-      
+      <div v-else-if="appState === 'scanning'" class="flex items-center justify-center min-h-screen p-8">
+        <div class="text-center">
+          <h2 class="text-xl font-mono font-bold text-green-400 mb-4">{{ userCodename }}</h2>
+          <p class="text-green-400/70 mb-6">Scanning for nearby nodes...</p>
+          <div class="w-32 h-32 mx-auto relative">
+            <!-- Radar circles -->
+            <div class="absolute inset-0 border border-green-400/30 rounded-full animate-ping"></div>
+            <div class="absolute inset-4 border border-green-400/50 rounded-full animate-ping" style="animation-delay: 0.5s"></div>
+            <div class="absolute inset-8 border border-green-400/70 rounded-full animate-ping" style="animation-delay: 1s"></div>
+            <!-- Center dot -->
+            <div class="absolute top-1/2 left-1/2 w-2 h-2 bg-green-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Chat State -->
-      <ChatInterface
-        v-else-if="appState === 'chatting'"
-        ref="chatComponent"
-        :partner-codename="partnerCodename"
-        :connected="connected"
-        @disconnect="disconnectFromChat"
-        @send-message="sendMessage"
-      />
-      
-      <!-- Disconnected State -->
+      <div v-else-if="appState === 'chatting'" class="min-h-screen bg-gray-800 p-4">
+        <div class="max-w-4xl mx-auto">
+          <div class="bg-gray-900 rounded-lg border border-green-400/30 overflow-hidden">
+            <!-- Chat header -->
+            <div class="bg-gray-800 px-4 py-3 border-b border-green-400/30 flex justify-between items-center">
+              <div class="flex items-center space-x-2">
+                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span class="text-green-400 font-mono">Connected to {{ partnerCodename }}</span>
+              </div>
+              <button 
+                @click="disconnectFromChat" 
+                class="text-red-400 hover:text-red-300 font-mono text-sm"
+              >
+                DISCONNECT
+              </button>
+            </div>
+            
+            <!-- Messages area -->
+            <div class="h-96 p-4 overflow-y-auto bg-gray-900" ref="messagesContainer">
+              <div v-if="messages.length === 0" class="text-center text-green-400/60 py-8">
+                Start your anonymous conversation...
+              </div>
+              <div v-for="(message, index) in messages" :key="index" class="mb-4">
+                <div class="text-xs text-green-400/60 mb-1">{{ message.from }}</div>
+                <div class="text-green-400 font-mono">{{ message.message }}</div>
+              </div>
+            </div>
+            
+            <!-- Input area -->
+            <div class="bg-gray-800 px-4 py-3 border-t border-green-400/30">
+              <form @submit.prevent="sendMessage" class="flex space-x-2">
+                <input
+                  v-model="messageInput"
+                  type="text"
+                  placeholder="Type your message..."
+                  class="flex-1 bg-gray-900 border border-green-400/30 text-green-400 px-3 py-2 rounded font-mono focus:outline-none focus:border-green-400"
+                  :disabled="!connected"
+                />
+                <button 
+                  type="submit" 
+                  class="px-4 py-2 bg-green-400/20 text-green-400 border border-green-400/30 rounded hover:bg-green-400/30 font-mono"
+                  :disabled="!messageInput.trim() || !connected"
+                >
+                  SEND
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>      <!-- Disconnected State -->
       <div
         v-else-if="appState === 'disconnected'"
         class="flex items-center justify-center min-h-screen p-8"
@@ -110,6 +166,12 @@ const userCodename = ref('')
 const userSessionId = ref('')
 const partnerCodename = ref('')
 const connected = ref(false)
+const socketConnected = ref(false)
+
+// Chat data
+const messages = ref<Array<{message: string, from: string, timestamp: string}>>([])
+const messageInput = ref('')
+const messagesContainer = ref<HTMLElement>()
 
 // Components
 const chatComponent = ref()
@@ -210,17 +272,21 @@ const initializeSocket = async () => {
     // Set up event listeners
     socket.on('connect', () => {
       console.log('🟩 Connected to server')
+      socketConnected.value = true
     })
 
     socket.on('disconnect', () => {
       console.log('🔴 Disconnected from server')
+      socketConnected.value = false
     })
 
     socket.on('session_created', (data: any) => {
+      console.log('🟩 Session created event received:', data)
       userSessionId.value = data.sessionId
       userCodename.value = data.codename
+      console.log('🟩 Setting app state to scanning...')
       appState.value = 'scanning'
-      console.log('🟩 Session created:', data.codename)
+      console.log('🟩 Current app state:', appState.value)
     })
 
     socket.on('connection_established', (data: any) => {
@@ -256,16 +322,25 @@ const initializeSocket = async () => {
 const requestLocationPermission = async () => {
   try {
     error.value = ''
+    console.log('🟩 Requesting location permission...')
+    
     const location = await getCurrentLocation()
+    console.log('🟩 Location acquired:', location)
     
     if (!socket) {
       throw new Error('Grid connection not established')
     }
     
+    if (!socket.connected) {
+      throw new Error('Socket not connected to server')
+    }
+    
+    console.log('🟩 Sending join_grid event...')
     // Join the grid with location
     socket.emit('join_grid', location)
     
   } catch (err: any) {
+    console.error('❌ Error requesting location:', err)
     error.value = err.message || 'Failed to acquire location'
   }
 }

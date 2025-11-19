@@ -7,6 +7,7 @@ const LOCATION_RADIUS = parseInt(process.env.LOCATION_RADIUS) || 1000; // meters
 
 // Check if MongoDB is available
 let useMongoDb = true;
+let useRedis = true;
 
 export const setupSocketHandlers = (io, redisClient) => {
   
@@ -51,21 +52,33 @@ export const setupSocketHandlers = (io, redisClient) => {
           userSession = sessionData;
         }
         
-        // Store in Redis GEO for location queries
-        await redisClient.geoAdd('user_locations', {
-          longitude,
-          latitude,
-          member: sessionId
-        });
-        
-        // Store session mapping in Redis
-        await redisClient.hSet(`session:${sessionId}`, {
-          socketId: socket.id,
-          codename,
-          latitude,
-          longitude,
-          isActive: 'true'
-        });
+        // Store location for proximity matching
+        try {
+          if (redisClient && useRedis) {
+            // Store in Redis GEO for location queries
+            await redisClient.geoAdd('user_locations', {
+              longitude,
+              latitude,
+              member: sessionId
+            });
+            
+            // Store session mapping in Redis
+            await redisClient.hSet(`session:${sessionId}`, {
+              socketId: socket.id,
+              codename,
+              latitude,
+              longitude,
+              isActive: 'true'
+            });
+          } else {
+            throw new Error('Redis not available');
+          }
+        } catch (error) {
+          console.log('📍 Using in-memory storage for location data');
+          useRedis = false;
+          // Store location in memory
+          inMemoryStorage.addUserLocation(sessionId, latitude, longitude);
+        }
         
         socket.emit('session_created', {
           sessionId,
@@ -178,15 +191,33 @@ export const setupSocketHandlers = (io, redisClient) => {
 // Find nearby users and create chat room
 const findNearbyUser = async (socket, userSession, redisClient, io) => {
   try {
-    // Search for users within radius using Redis GEO
-    const nearbyUsers = await redisClient.geoRadius(
-      'user_locations',
-      userSession.location.longitude,
-      userSession.location.latitude,
-      LOCATION_RADIUS,
-      'm',
-      { WITHDIST: true }
-    );
+    let nearbyUsers = [];
+    
+    try {
+      if (redisClient && useRedis) {
+        // Search for users within radius using Redis GEO
+        nearbyUsers = await redisClient.geoRadius(
+          'user_locations',
+          userSession.location.longitude,
+          userSession.location.latitude,
+          LOCATION_RADIUS,
+          'm',
+          { WITHDIST: true }
+        );
+      } else {
+        throw new Error('Redis not available');
+      }
+    } catch (error) {
+      console.log('📍 Using in-memory location matching');
+      useRedis = false;
+      // Use in-memory location search
+      nearbyUsers = inMemoryStorage.findNearbyUsers(
+        userSession.location.latitude,
+        userSession.location.longitude,
+        LOCATION_RADIUS,
+        userSession.sessionId
+      );
+    }
 
     // Filter out the current user and find available users
     for (const nearby of nearbyUsers) {
@@ -380,9 +411,18 @@ const handleUserDisconnection = async (socket, userSession, redisClient, io) => 
       }
     }
     
-    // Remove from Redis
-    await redisClient.geoRem('user_locations', userSession.sessionId);
-    await redisClient.del(`session:${userSession.sessionId}`);
+    // Remove from Redis or in-memory storage
+    try {
+      if (redisClient && useRedis) {
+        await redisClient.geoRem('user_locations', userSession.sessionId);
+        await redisClient.del(`session:${userSession.sessionId}`);
+      } else {
+        // Already handled by inMemoryStorage.deleteSession
+      }
+    } catch (error) {
+      useRedis = false;
+      // Location will be removed by inMemoryStorage.deleteSession
+    }
     
     // Remove from storage
     try {
