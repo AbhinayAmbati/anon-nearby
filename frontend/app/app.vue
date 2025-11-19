@@ -149,6 +149,90 @@
         </div>
       </div>
     </div>
+    
+    <!-- Footer -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-80 border-t border-green-400/20 px-4 py-2 z-40">
+      <div class="flex justify-center items-center space-x-4 text-xs text-green-400/60">
+        <span>&copy; 2025 ANON-NEARBY</span>
+        <span>•</span>
+        <button @click="showTerms = true" class="hover:text-green-400 transition-colors">
+          Terms of Service
+        </button>
+        <span>•</span>
+        <button @click="showPrivacy = true" class="hover:text-green-400 transition-colors">
+          Privacy Policy
+        </button>
+        <span>•</span>
+        <span>Anonymous • Ephemeral • Secure</span>
+      </div>
+    </footer>
+
+    <!-- Terms Modal -->
+    <div v-if="showTerms" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+      <div class="bg-gray-900 border border-green-400/30 rounded-lg max-w-2xl w-full max-h-96 overflow-y-auto">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-mono font-bold text-green-400">Terms of Service</h2>
+            <button @click="showTerms = false" class="text-green-400 hover:text-red-400">✕</button>
+          </div>
+          <div class="text-green-400/80 font-mono text-sm space-y-4">
+            <p><strong>1. Anonymous Service</strong><br>
+            ANON-NEARBY is a completely anonymous chat service. We do not collect, store, or track personal information.</p>
+            
+            <p><strong>2. Ephemeral Sessions</strong><br>
+            All chat sessions are temporary. Messages are not stored permanently and disappear when sessions end.</p>
+            
+            <p><strong>3. Location Usage</strong><br>
+            Your location is used only for proximity matching. Location data is not stored permanently.</p>
+            
+            <p><strong>4. User Conduct</strong><br>
+            Users must not engage in harassment, illegal activities, or sharing of harmful content.</p>
+            
+            <p><strong>5. No Guarantees</strong><br>
+            This service is provided as-is without warranties. Use at your own discretion.</p>
+            
+            <p><strong>6. Age Restriction</strong><br>
+            Users must be 18+ to use this service.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div v-if="showPrivacy" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+      <div class="bg-gray-900 border border-green-400/30 rounded-lg max-w-2xl w-full max-h-96 overflow-y-auto">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-mono font-bold text-green-400">Privacy Policy</h2>
+            <button @click="showPrivacy = false" class="text-green-400 hover:text-red-400">✕</button>
+          </div>
+          <div class="text-green-400/80 font-mono text-sm space-y-4">
+            <p><strong>Data We Collect:</strong><br>
+            • Temporary location coordinates (for proximity matching only)<br>
+            • Auto-generated session identifiers<br>
+            • Real-time chat messages (not stored permanently)</p>
+            
+            <p><strong>Data We Don't Collect:</strong><br>
+            • Personal information or identities<br>
+            • Chat history or message logs<br>
+            • User accounts or profiles<br>
+            • Device identifiers or tracking cookies</p>
+            
+            <p><strong>Data Usage:</strong><br>
+            Location data is used exclusively for finding nearby users. All session data is automatically deleted when you disconnect.</p>
+            
+            <p><strong>Data Sharing:</strong><br>
+            We do not share, sell, or distribute any user data with third parties.</p>
+            
+            <p><strong>Data Security:</strong><br>
+            All communications are encrypted. Session data exists only in memory and is not persisted to permanent storage.</p>
+            
+            <p><strong>Your Rights:</strong><br>
+            Since we don't store personal data, there's nothing to delete or modify. Simply close the app to end all data processing.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -172,6 +256,8 @@ const socketConnected = ref(false)
 const messages = ref<Array<{message: string, from: string, timestamp: string}>>([])
 const messageInput = ref('')
 const messagesContainer = ref<HTMLElement>()
+const showTerms = ref(false)
+const showPrivacy = ref(false)
 
 // Components
 const chatComponent = ref()
