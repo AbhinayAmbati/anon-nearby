@@ -225,7 +225,7 @@
             We do not share, sell, or distribute any user data with third parties.</p>
             
             <p><strong>Data Security:</strong><br>
-            All communications are encrypted. Session data exists only in memory and is not persisted to permanent storage.</p>
+            All Session data exists only in memory and is not persisted to permanent storage.</p>
             
             <p><strong>Your Rights:</strong><br>
             Since we don't store personal data, there's nothing to delete or modify. Simply close the app to end all data processing.</p>

@@ -100,6 +100,23 @@ export const setupSocketHandlers = (io, redisClient) => {
         // Try to find nearby users immediately
         await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId);
         
+        // Trigger scanning for all existing scanning users when someone new joins
+        await triggerScanningForAllUsers(redisClient, io, sessionsBySocketId);
+        
+        // Set up periodic scanning for this user
+        const scanningInterval = setInterval(async () => {
+          // Only scan if user is still connected and in scanning mode
+          if (sessionsBySocketId.has(socket.id) && userSession && !userSession.chatRoomId) {
+            await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId);
+          } else {
+            // Clear interval if user is no longer scanning
+            clearInterval(scanningInterval);
+          }
+        }, 3000); // Scan every 3 seconds
+        
+        // Store interval reference for cleanup
+        socket.scanningInterval = scanningInterval;
+        
       } catch (error) {
         console.error('Error joining grid:', error);
         socket.emit('error', { message: 'Failed to join grid' });
@@ -191,6 +208,12 @@ export const setupSocketHandlers = (io, redisClient) => {
     // Handle user disconnection
     socket.on('disconnect', async () => {
       console.log(`🔴 User disconnected: ${socket.id}`);
+      
+      // Clear scanning interval
+      if (socket.scanningInterval) {
+        clearInterval(socket.scanningInterval);
+      }
+      
       sessionsBySocketId.delete(socket.id);
       await handleUserDisconnection(socket, userSession, redisClient, io);
     });
@@ -198,6 +221,12 @@ export const setupSocketHandlers = (io, redisClient) => {
     // Handle manual leave
     socket.on('leave_grid', async () => {
       console.log(`🔴 User left grid: ${socket.id}`);
+      
+      // Clear scanning interval
+      if (socket.scanningInterval) {
+        clearInterval(socket.scanningInterval);
+      }
+      
       sessionsBySocketId.delete(socket.id);
       await handleUserDisconnection(socket, userSession, redisClient, io);
     });
@@ -353,6 +382,11 @@ const createChatRoom = async (user1Session, user2Session, redisClient, io, sessi
     
     if (user1Socket) {
       user1Socket.join(roomId);
+      // Clear scanning interval since user is now chatting
+      if (user1Socket.scanningInterval) {
+        clearInterval(user1Socket.scanningInterval);
+        user1Socket.scanningInterval = null;
+      }
       console.log(`🔗 ${user1Session.codename} joined room ${roomId}`);
     } else {
       console.log(`❌ Socket not found for ${user1Session.codename} (${user1Session.socketId})`);
@@ -360,6 +394,11 @@ const createChatRoom = async (user1Session, user2Session, redisClient, io, sessi
     
     if (user2Socket) {
       user2Socket.join(roomId);
+      // Clear scanning interval since user is now chatting
+      if (user2Socket.scanningInterval) {
+        clearInterval(user2Socket.scanningInterval);
+        user2Socket.scanningInterval = null;
+      }
       console.log(`🔗 ${user2Session.codename} joined room ${roomId}`);
     } else {
       console.log(`❌ Socket not found for ${user2Session.codename} (${user2Session.socketId})`);
@@ -510,5 +549,46 @@ const handleUserDisconnection = async (socket, userSession, redisClient, io) => 
     
   } catch (error) {
     console.error('❌ Error handling disconnection:', error);
+  }
+};
+
+// Trigger scanning for all users currently in scanning mode
+const triggerScanningForAllUsers = async (redisClient, io, sessionsBySocketId) => {
+  try {
+    console.log(`🔄 Triggering scan for all users...`);
+    
+    // Get all scanning sessions
+    let scanningSessions = [];
+    
+    try {
+      if (useMongoDb) {
+        scanningSessions = await ActiveSession.find({
+          isActive: true,
+          chatRoomId: { $exists: false }
+        });
+      } else {
+        // Get all sessions from in-memory storage
+        const allSessions = await inMemoryStorage.findActiveSessions();
+        scanningSessions = allSessions.filter(session => !session.chatRoomId);
+      }
+    } catch (error) {
+      useMongoDb = false;
+      const allSessions = await inMemoryStorage.findActiveSessions();
+      scanningSessions = allSessions.filter(session => !session.chatRoomId);
+    }
+    
+    // Trigger scan for each scanning user
+    for (const session of scanningSessions) {
+      const socket = io.sockets.sockets.get(session.socketId);
+      if (socket && sessionsBySocketId.has(session.socketId)) {
+        // Small delay to prevent overwhelming the system
+        setTimeout(async () => {
+          await findNearbyUser(socket, session, redisClient, io, sessionsBySocketId);
+        }, Math.random() * 1000); // Random delay 0-1 second
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error triggering scans:', error);
   }
 };
