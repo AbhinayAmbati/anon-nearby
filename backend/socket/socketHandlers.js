@@ -10,6 +10,8 @@ let useMongoDb = true;
 let useRedis = true;
 
 export const setupSocketHandlers = (io, redisClient) => {
+  // Store session references by socket ID for proper cleanup
+  const sessionsBySocketId = new Map();
   
   io.on('connection', (socket) => {
     console.log(`🟩 User connected: ${socket.id}`);
@@ -43,6 +45,10 @@ export const setupSocketHandlers = (io, redisClient) => {
           if (useMongoDb) {
             userSession = new ActiveSession(sessionData);
             await userSession.save();
+          } else {
+            // Ensure we use in-memory storage
+            await inMemoryStorage.saveSession(sessionData);
+            userSession = sessionData;
           }
         } catch (error) {
           // Fall back to in-memory storage
@@ -86,10 +92,13 @@ export const setupSocketHandlers = (io, redisClient) => {
           status: 'scanning'
         });
         
+        // Store session reference for this socket
+        sessionsBySocketId.set(socket.id, userSession);
+        
         console.log(`🟩 ${codename} joined the grid at (${latitude}, ${longitude})`);
         
         // Try to find nearby users immediately
-        await findNearbyUser(socket, userSession, redisClient, io);
+        await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId);
         
       } catch (error) {
         console.error('Error joining grid:', error);
@@ -100,7 +109,10 @@ export const setupSocketHandlers = (io, redisClient) => {
     // Handle sending messages
     socket.on('send_message', async (data) => {
       try {
+        console.log(`📤 Message attempt from socket ${socket.id}, userSession exists: ${!!userSession}`);
+        
         if (!userSession || !userSession.chatRoomId) {
+          console.log(`❌ No active chat for socket ${socket.id}`);
           socket.emit('error', { message: 'Not in an active chat' });
           return;
         }
@@ -110,6 +122,8 @@ export const setupSocketHandlers = (io, redisClient) => {
         if (!message || message.trim().length === 0) {
           return;
         }
+
+        console.log(`📝 ${userSession.codename} sending: "${message}" to room ${userSession.chatRoomId}`);
 
         let chatRoom;
         try {
@@ -155,16 +169,16 @@ export const setupSocketHandlers = (io, redisClient) => {
           });
         }
 
-        // Broadcast message to both participants
+        // Broadcast message to the chat room (more reliable than socket IDs)
         const messageData = {
           message: message.trim(),
           from: userSession.codename,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          senderId: userSession.sessionId
         };
 
-        chatRoom.participants.forEach(participant => {
-          io.to(participant.socketId).emit('message_received', messageData);
-        });
+        // Send to all sockets in the room
+        io.to(userSession.chatRoomId).emit('message_received', messageData);
 
         console.log(`💬 ${userSession.codename}: ${message.substring(0, 50)}...`);
         
@@ -177,19 +191,21 @@ export const setupSocketHandlers = (io, redisClient) => {
     // Handle user disconnection
     socket.on('disconnect', async () => {
       console.log(`🔴 User disconnected: ${socket.id}`);
+      sessionsBySocketId.delete(socket.id);
       await handleUserDisconnection(socket, userSession, redisClient, io);
     });
 
     // Handle manual leave
     socket.on('leave_grid', async () => {
       console.log(`🔴 User left grid: ${socket.id}`);
+      sessionsBySocketId.delete(socket.id);
       await handleUserDisconnection(socket, userSession, redisClient, io);
     });
   });
 };
 
 // Find nearby users and create chat room
-const findNearbyUser = async (socket, userSession, redisClient, io) => {
+const findNearbyUser = async (socket, userSession, redisClient, io, sessionsBySocketId) => {
   try {
     let nearbyUsers = [];
     
@@ -250,7 +266,7 @@ const findNearbyUser = async (socket, userSession, redisClient, io) => {
       
       if (nearbySession) {
         // Found a match! Create chat room
-        await createChatRoom(userSession, nearbySession, redisClient, io);
+        await createChatRoom(userSession, nearbySession, redisClient, io, sessionsBySocketId);
         return;
       }
     }
@@ -264,7 +280,7 @@ const findNearbyUser = async (socket, userSession, redisClient, io) => {
 };
 
 // Create a chat room between two users
-const createChatRoom = async (user1Session, user2Session, redisClient, io) => {
+const createChatRoom = async (user1Session, user2Session, redisClient, io, sessionsBySocketId) => {
   try {
     const roomId = generateRoomId();
     
@@ -321,12 +337,33 @@ const createChatRoom = async (user1Session, user2Session, redisClient, io) => {
     user1Session.chatRoomId = roomId;
     user2Session.chatRoomId = roomId;
     
+    // Update the session references in socket handlers
+    if (sessionsBySocketId.has(user1Session.socketId)) {
+      sessionsBySocketId.get(user1Session.socketId).chatRoomId = roomId;
+      sessionsBySocketId.get(user1Session.socketId).connectedWith = 'matched';
+    }
+    if (sessionsBySocketId.has(user2Session.socketId)) {
+      sessionsBySocketId.get(user2Session.socketId).chatRoomId = roomId;
+      sessionsBySocketId.get(user2Session.socketId).connectedWith = 'matched';
+    }
+    
     // Join socket rooms
     const user1Socket = io.sockets.sockets.get(user1Session.socketId);
     const user2Socket = io.sockets.sockets.get(user2Session.socketId);
     
-    if (user1Socket) user1Socket.join(roomId);
-    if (user2Socket) user2Socket.join(roomId);
+    if (user1Socket) {
+      user1Socket.join(roomId);
+      console.log(`🔗 ${user1Session.codename} joined room ${roomId}`);
+    } else {
+      console.log(`❌ Socket not found for ${user1Session.codename} (${user1Session.socketId})`);
+    }
+    
+    if (user2Socket) {
+      user2Socket.join(roomId);
+      console.log(`🔗 ${user2Session.codename} joined room ${roomId}`);
+    } else {
+      console.log(`❌ Socket not found for ${user2Session.codename} (${user2Session.socketId})`);
+    }
     
     // Notify both users
     const connectionData = {
@@ -361,7 +398,9 @@ const handleUserDisconnection = async (socket, userSession, redisClient, io) => 
   if (!userSession) return;
   
   try {
-    // If user was in a chat room, notify the other user
+    console.log(`🧹 Starting cleanup for: ${userSession.codename} (${userSession.sessionId})`);
+    
+    // If user was in a chat room, notify the other user and cleanup
     if (userSession.chatRoomId) {
       let chatRoom;
       try {
@@ -383,9 +422,13 @@ const handleUserDisconnection = async (socket, userSession, redisClient, io) => 
       }
       
       if (chatRoom) {
-        // Notify the other participant
+        console.log(`🔗 Cleaning up chat room: ${chatRoom.roomId}`);
+        
+        // Notify and disconnect the other participant
+        let otherParticipantSessionId = null;
         chatRoom.participants.forEach(participant => {
           if (participant.sessionId !== userSession.sessionId) {
+            otherParticipantSessionId = participant.sessionId;
             const otherSocket = io.sockets.sockets.get(participant.socketId);
             if (otherSocket) {
               otherSocket.emit('partner_disconnected', {
@@ -396,49 +439,76 @@ const handleUserDisconnection = async (socket, userSession, redisClient, io) => 
           }
         });
         
-        // Mark chat room as inactive
+        // Update other participant's session to remove chat room reference
+        if (otherParticipantSessionId) {
+          try {
+            if (useMongoDb) {
+              await ActiveSession.updateOne(
+                { sessionId: otherParticipantSessionId },
+                { $unset: { chatRoomId: 1 }, connectedWith: null }
+              );
+            } else {
+              await inMemoryStorage.updateSession(otherParticipantSessionId, { 
+                chatRoomId: null, 
+                connectedWith: null 
+              });
+            }
+          } catch (error) {
+            useMongoDb = false;
+            await inMemoryStorage.updateSession(otherParticipantSessionId, { 
+              chatRoomId: null, 
+              connectedWith: null 
+            });
+          }
+        }
+        
+        // Completely delete the chat room (not just mark inactive)
         try {
           if (useMongoDb) {
-            chatRoom.isActive = false;
-            await chatRoom.save();
+            await ChatRoom.deleteOne({ roomId: chatRoom.roomId });
+            console.log(`🗑️ Deleted chat room from MongoDB: ${chatRoom.roomId}`);
           } else {
-            await inMemoryStorage.updateChatRoom(chatRoom.roomId, { isActive: false });
+            await inMemoryStorage.deleteChatRoom(chatRoom.roomId);
+            console.log(`🗑️ Deleted chat room from memory: ${chatRoom.roomId}`);
           }
         } catch (error) {
           useMongoDb = false;
-          await inMemoryStorage.updateChatRoom(chatRoom.roomId, { isActive: false });
+          await inMemoryStorage.deleteChatRoom(chatRoom.roomId);
+          console.log(`🗑️ Deleted chat room from memory (fallback): ${chatRoom.roomId}`);
         }
       }
     }
     
-    // Remove from Redis or in-memory storage
+    // Remove user location from Redis/in-memory storage
     try {
       if (redisClient && useRedis) {
         await redisClient.geoRem('user_locations', userSession.sessionId);
         await redisClient.del(`session:${userSession.sessionId}`);
-      } else {
-        // Already handled by inMemoryStorage.deleteSession
+        console.log(`🗑️ Removed location and session from Redis: ${userSession.sessionId}`);
       }
     } catch (error) {
       useRedis = false;
-      // Location will be removed by inMemoryStorage.deleteSession
+      console.log('📝 Redis cleanup failed, relying on in-memory cleanup');
     }
     
-    // Remove from storage
+    // Completely delete the user session
     try {
       if (useMongoDb) {
-        await ActiveSession.deleteOne({ sessionId: userSession.sessionId });
+        const result = await ActiveSession.deleteOne({ sessionId: userSession.sessionId });
+        console.log(`🗑️ Deleted session from MongoDB: ${userSession.sessionId} (${result.deletedCount} deleted)`);
       } else {
-        await inMemoryStorage.deleteSession(userSession.sessionId);
+        const result = await inMemoryStorage.deleteSession(userSession.sessionId);
+        console.log(`🗑️ Deleted session from memory: ${userSession.sessionId} (${result.deletedCount} deleted)`);
       }
     } catch (error) {
       useMongoDb = false;
-      await inMemoryStorage.deleteSession(userSession.sessionId);
+      const result = await inMemoryStorage.deleteSession(userSession.sessionId);
+      console.log(`🗑️ Deleted session from memory (fallback): ${userSession.sessionId} (${result.deletedCount} deleted)`);
     }
     
-    console.log(`🧹 Cleaned up session: ${userSession.codename}`);
+    console.log(`✅ Complete cleanup finished for: ${userSession.codename}`);
     
   } catch (error) {
-    console.error('Error handling disconnection:', error);
+    console.error('❌ Error handling disconnection:', error);
   }
 };

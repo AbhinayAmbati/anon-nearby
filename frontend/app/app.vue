@@ -385,7 +385,14 @@ const initializeSocket = async () => {
 
     socket.on('message_received', (messageData: any) => {
       console.log('💬 Message received from:', messageData.from)
-      messages.value.push(messageData)
+      
+      // Show "You" for own messages, codename for partner messages
+      const displayMessage = {
+        ...messageData,
+        from: messageData.senderId === userSessionId.value ? 'You' : messageData.from
+      }
+      
+      messages.value.push(displayMessage)
       nextTick(() => {
         if (messagesContainer.value) {
           messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
@@ -441,24 +448,10 @@ const sendChatMessage = () => {
   
   const message = messageInput.value.trim()
   
-  // Add own message immediately
-  messages.value.push({
-    message,
-    from: 'You',
-    timestamp: new Date().toISOString()
-  })
-  
-  // Send to server
+  // Send to server (don't add to messages array - let server broadcast it back)
   socket.emit('send_message', { message })
   
   messageInput.value = ''
-  
-  // Scroll to bottom
-  nextTick(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-    }
-  })
 }
 
 const sendMessage = async (message: string) => {

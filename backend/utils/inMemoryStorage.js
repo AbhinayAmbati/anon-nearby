@@ -123,21 +123,36 @@ class InMemoryStorage {
     return Promise.resolve({ acknowledged: false });
   }
 
-  // Cleanup old sessions (older than 1 hour)
+  deleteChatRoom(roomId) {
+    const deleted = this.chatRooms.delete(roomId);
+    return Promise.resolve({ deletedCount: deleted ? 1 : 0 });
+  }
+
+  // Cleanup old sessions (older than 1 hour) and inactive rooms
   cleanup() {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    let cleanedSessions = 0;
+    let cleanedRooms = 0;
     
+    // Clean up old sessions
     for (const [sessionId, session] of this.sessions) {
       if (session.createdAt < oneHourAgo) {
         this.sessions.delete(sessionId);
         this.removeUserLocation(sessionId);
+        cleanedSessions++;
       }
     }
     
+    // Clean up old or inactive chat rooms
     for (const [roomId, room] of this.chatRooms) {
-      if (room.createdAt < oneHourAgo) {
+      if (room.createdAt < oneHourAgo || room.isActive === false) {
         this.chatRooms.delete(roomId);
+        cleanedRooms++;
       }
+    }
+    
+    if (cleanedSessions > 0 || cleanedRooms > 0) {
+      console.log(`🧹 Cleaned up ${cleanedSessions} old sessions and ${cleanedRooms} inactive rooms`);
     }
   }
 
