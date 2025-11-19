@@ -109,7 +109,7 @@
             
             <!-- Input area -->
             <div class="bg-gray-800 px-4 py-3 border-t border-green-400/30">
-              <form @submit.prevent="sendMessage" class="flex space-x-2">
+              <form @submit.prevent="sendChatMessage" class="flex space-x-2">
                 <input
                   v-model="messageInput"
                   type="text"
@@ -293,19 +293,24 @@ const initializeSocket = async () => {
       partnerCodename.value = data.partnerCodename
       connected.value = true
       appState.value = 'chatting'
+      messages.value = [] // Clear any old messages
       console.log('🔗 Connection established with:', data.partnerCodename)
     })
 
     socket.on('message_received', (messageData: any) => {
       console.log('💬 Message received from:', messageData.from)
-      if (chatComponent.value) {
-        chatComponent.value.addMessage(messageData)
-      }
+      messages.value.push(messageData)
+      nextTick(() => {
+        if (messagesContainer.value) {
+          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+        }
+      })
     })
 
     socket.on('partner_disconnected', (data: any) => {
       console.log('🔴 Partner disconnected')
       connected.value = false
+      messages.value = []
       appState.value = 'disconnected'
     })
 
@@ -345,6 +350,31 @@ const requestLocationPermission = async () => {
   }
 }
 
+const sendChatMessage = () => {
+  if (!messageInput.value.trim() || !socket) return
+  
+  const message = messageInput.value.trim()
+  
+  // Add own message immediately
+  messages.value.push({
+    message,
+    from: 'You',
+    timestamp: new Date().toISOString()
+  })
+  
+  // Send to server
+  socket.emit('send_message', { message })
+  
+  messageInput.value = ''
+  
+  // Scroll to bottom
+  nextTick(() => {
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+    }
+  })
+}
+
 const sendMessage = async (message: string) => {
   if (!socket) return
   
@@ -359,6 +389,7 @@ const disconnectFromChat = async () => {
   // Reset state
   connected.value = false
   partnerCodename.value = ''
+  messages.value = []
   appState.value = 'permission'
 }
 
@@ -368,6 +399,7 @@ const returnToScanning = () => {
   partnerCodename.value = ''
   userCodename.value = ''
   userSessionId.value = ''
+  messages.value = []
   appState.value = 'permission'
 }
 
