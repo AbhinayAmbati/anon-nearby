@@ -243,23 +243,32 @@
             <button @click="showTerms = false" class="text-green-400 hover:text-red-400 text-xl">✕</button>
           </div>
           <div class="text-green-400/80 font-mono text-xs sm:text-sm space-y-3 sm:space-y-4">
-            <p><strong>1. Anonymous Service</strong><br>
-            ANON-NEARBY is a completely anonymous chat service. We do not collect, store, or track personal information.</p>
+            <p><strong>1. DISCLAIMER OF LIABILITY</strong><br>
+            ANON-NEARBY AND ITS OPERATORS ARE NOT RESPONSIBLE FOR ANY DAMAGES, LOSSES, HARM, OR CONSEQUENCES ARISING FROM USE OF THIS SERVICE. THIS INCLUDES BUT IS NOT LIMITED TO: PERSONAL INJURY, PROPERTY DAMAGE, FINANCIAL LOSS, EMOTIONAL DISTRESS, PRIVACY VIOLATIONS, ILLEGAL ACTIVITIES, OR ANY OTHER ISSUES.</p>
             
-            <p><strong>2. Ephemeral Sessions</strong><br>
-            All chat sessions are temporary. Messages are not stored permanently and disappear when sessions end.</p>
+            <p><strong>2. Anonymous Service</strong><br>
+            ANON-NEARBY is a completely anonymous chat service. We do not collect, store, or track personal information. We cannot verify user identities or intentions.</p>
             
-            <p><strong>3. Location Usage</strong><br>
-            Your location is used only for proximity matching. Location data is not stored permanently.</p>
+            <p><strong>3. USE AT YOUR OWN RISK</strong><br>
+            Users assume ALL RESPONSIBILITY for their safety, security, and any consequences of using this service. We strongly advise against meeting strangers or sharing personal information.</p>
             
-            <p><strong>4. User Conduct</strong><br>
-            Users must not engage in harassment, illegal activities, or sharing of harmful content.</p>
+            <p><strong>4. Ephemeral Sessions</strong><br>
+            All chat sessions are temporary. Messages are not stored permanently and disappear when sessions end. We cannot recover lost data or conversations.</p>
             
-            <p><strong>5. No Guarantees</strong><br>
-            This service is provided as-is without warranties. Use at your own discretion.</p>
+            <p><strong>5. Location Usage</strong><br>
+            Your location is used only for proximity matching. Location data is not stored permanently. Users are responsible for their own location privacy and safety.</p>
             
-            <p><strong>6. Age Restriction</strong><br>
-            Users must be 18+ to use this service.</p>
+            <p><strong>6. User Conduct</strong><br>
+            Users must not engage in harassment, illegal activities, or sharing of harmful content. We are not responsible for monitoring or controlling user behavior.</p>
+            
+            <p><strong>7. NO WARRANTIES OR GUARANTEES</strong><br>
+            This service is provided "AS-IS" without any warranties, guarantees, or promises of reliability, safety, or functionality.</p>
+            
+            <p><strong>8. Age Restriction & Parental Responsibility</strong><br>
+            Users must be 18+ to use this service. Parents are responsible for monitoring their children's internet usage.</p>
+            
+            <p><strong>9. INDEMNIFICATION</strong><br>
+            By using this service, you agree to hold harmless and indemnify ANON-NEARBY from any claims, damages, or legal issues arising from your use of the service.</p>
           </div>
         </div>
       </div>
@@ -274,28 +283,43 @@
             <button @click="showPrivacy = false" class="text-green-400 hover:text-red-400 text-xl">✕</button>
           </div>
           <div class="text-green-400/80 font-mono text-xs sm:text-sm space-y-3 sm:space-y-4">
+            <p><strong>IMPORTANT DISCLAIMER:</strong><br>
+            ANON-NEARBY IS NOT RESPONSIBLE FOR ANY PRIVACY BREACHES, DATA MISUSE, OR SECURITY INCIDENTS. USERS ASSUME ALL RISKS RELATED TO THEIR PRIVACY AND DATA SECURITY.</p>
+            
+            <p><strong>Message Flow & Zero Persistence Architecture:</strong><br>
+            Messages are delivered through real-time WebSocket connections (Socket.IO) and are NEVER stored in any database. The complete flow: User types → Socket.IO broadcast → Recipient receives. Messages exist only in browser memory during active sessions and are instantly destroyed when chats end.</p>
+            
+            
             <p><strong>Data We Collect:</strong><br>
             • Temporary location coordinates (for proximity matching only)<br>
-            • Auto-generated session identifiers<br>
-            • Real-time chat messages (not stored permanently)</p>
+            • Auto-generated session identifiers and codenames<br>
+            • Real-time chat messages (exist only in memory, never stored)<br>
+            • Connection metadata (IP addresses, socket IDs) for technical functionality</p>
             
             <p><strong>Data We Don't Collect:</strong><br>
             • Personal information or identities<br>
             • Chat history or message logs<br>
             • User accounts or profiles<br>
-            • Device identifiers or tracking cookies</p>
+            • Device identifiers or tracking cookies<br>
+            • Persistent user preferences or settings</p>
             
-            <p><strong>Data Usage:</strong><br>
-            Location data is used exclusively for finding nearby users. All session data is automatically deleted when you disconnect.</p>
+            <p><strong>Network Security & Data in Transit:</strong><br>
+            While we use WebSocket connections, data transmitted over the internet may be vulnerable to interception. WE CANNOT GUARANTEE secure transmission or prevent man-in-the-middle attacks. Users should assume all communications may be monitored by third parties.</p>
             
-            <p><strong>Data Sharing:</strong><br>
-            We do not share, sell, or distribute any user data with third parties.</p>
+            <p><strong>Data Usage & Automatic Deletion:</strong><br>
+            Location data is used exclusively for finding nearby users within your selected radius (500m-5km). All session data, messages, and user information is automatically and immediately deleted when you disconnect. Browser refresh also destroys all local message history.</p>
             
-            <p><strong>Data Security:</strong><br>
-            All Session data exists only in memory and is not persisted to permanent storage.</p>
+            <p><strong>No Responsibility for Data Security:</strong><br>
+            We are NOT responsible for data breaches, unauthorized access, network vulnerabilities, WebSocket interception, or any privacy violations that may occur during use of this service. This includes but is not limited to: network eavesdropping, ISP monitoring, government surveillance, or malicious actors.</p>
             
-            <p><strong>Your Rights:</strong><br>
-            Since we don't store personal data, there's nothing to delete or modify. Simply close the app to end all data processing.</p>
+            <p><strong>Data Sharing & Third Parties:</strong><br>
+            We do not intentionally share, sell, or distribute user data with third parties. However, we cannot control or prevent unauthorized access by malicious actors, government agencies, ISPs, or other network intermediaries who may monitor WebSocket traffic.</p>
+            
+            <p><strong>User Responsibility & Safety:</strong><br>
+            Users are solely responsible for: protecting their own privacy, not sharing sensitive information, understanding the risks of anonymous communication platforms, not meeting strangers from the app, and ensuring their own physical and digital safety.</p>
+            
+            <p><strong>Your Rights & Technical Limitations:</strong><br>
+            Since we don't store personal data permanently, there's nothing to delete or modify. Simply close the app to end all data processing. However, WE PROVIDE NO GUARANTEES ABOUT DATA PRIVACY, SECURITY, OR COMPLETE DATA DELETION from network logs, ISP records, or other intermediate systems.</p>
           </div>
         </div>
       </div>

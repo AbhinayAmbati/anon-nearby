@@ -100,6 +100,49 @@ If database connections fail, the application automatically falls back to in-mem
 
 ## Technical Implementation Details
 
+### Message Flow Architecture - Zero Persistence Design
+
+**Real-Time WebSocket Communication**: Messages are delivered through Socket.IO rooms without any database storage. Here's the complete flow:
+
+1. **Frontend Message Send**:
+   ```javascript
+   socket.emit('send_message', { message: "Hello!" })
+   ```
+
+2. **Backend Processing**:
+   - Validates user is in active chat room
+   - Applies rate limiting to prevent spam
+   - Creates message object with metadata (codename, timestamp, sessionId)
+   - **NEVER stores message in database**
+
+3. **Real-Time Broadcast**:
+   ```javascript
+   io.to(chatRoomId).emit('message_received', messageData)
+   ```
+   - Broadcasts to ALL participants in the room instantly
+   - Uses Socket.IO rooms for efficient message routing
+   - No API calls or polling required
+
+4. **Client Reception**:
+   - Message appears immediately in chat interface
+   - Stored only in browser memory (messages.value array)
+   - Auto-scrolls to show latest message
+
+**Key Privacy Features**:
+- **Zero Database Persistence**: Messages exist only during active sessions
+- **Memory-Only Storage**: No permanent records created anywhere
+- **Instant Destruction**: All data deleted when chat ends
+- **Browser Refresh = Data Loss**: Intentional privacy feature
+- **No Message History**: Cannot retrieve past conversations
+
+### Data Flow Summary
+```
+User A Types → Socket.IO → Backend Validation → Room Broadcast → User B Receives
+     ↓                                                              ↑
+Memory Only                                                   Memory Only
+(No Database)                                               (No Database)
+```
+
 **Session Management**: Unique session identifiers and codenames are generated for each user connection, with automatic cleanup upon disconnection.
 
 **Geolocation Processing**: HTML5 Geolocation API captures client coordinates, while Redis GEORADIUS commands handle server-side proximity calculations.
