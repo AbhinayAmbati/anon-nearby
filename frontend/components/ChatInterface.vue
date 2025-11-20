@@ -37,6 +37,18 @@
         </div>
         <div class="message-content">{{ message.message }}</div>
       </div>
+      
+      <!-- Typing indicator -->
+      <div v-if="partnerTyping" class="typing-indicator">
+        <div class="typing-animation">
+          <span>{{ partnerCodename }} is typing</span>
+          <div class="typing-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Input area -->
@@ -49,6 +61,9 @@
           class="message-input"
           maxlength="500"
           :disabled="!connected"
+          @input="handleTyping"
+          @focus="handleTypingStart"
+          @blur="handleTypingStop"
         />
         <button 
           type="submit" 
@@ -80,11 +95,16 @@ defineProps<{
 defineEmits<{
   disconnect: []
   sendMessage: [message: string]
+  typingStart: []
+  typingStop: []
 }>()
 
 const messages = ref<Message[]>([])
 const messageInput = ref('')
 const messagesContainer = ref<HTMLElement>()
+const partnerTyping = ref(false)
+const typingTimeout = ref<NodeJS.Timeout | null>(null)
+const isTyping = ref(false)
 
 const addMessage = (messageData: any, isOwn = false) => {
   messages.value.push({
@@ -111,6 +131,9 @@ const sendMessage = () => {
     timestamp: new Date().toISOString()
   }, true)
   
+  // Stop typing when message is sent
+  handleTypingStop()
+  
   // Emit to parent
   $emit('sendMessage', message)
   
@@ -125,9 +148,47 @@ const formatTime = (timestamp: string) => {
   })
 }
 
-// Expose method to parent
+const handleTyping = () => {
+  if (!isTyping.value) {
+    handleTypingStart()
+  }
+  
+  // Reset the typing timeout
+  if (typingTimeout.value) {
+    clearTimeout(typingTimeout.value)
+  }
+  
+  typingTimeout.value = setTimeout(() => {
+    handleTypingStop()
+  }, 2000) // Stop typing after 2 seconds of inactivity
+}
+
+const handleTypingStart = () => {
+  if (!isTyping.value && connected) {
+    isTyping.value = true
+    $emit('typingStart')
+  }
+}
+
+const handleTypingStop = () => {
+  if (isTyping.value) {
+    isTyping.value = false
+    $emit('typingStop')
+    if (typingTimeout.value) {
+      clearTimeout(typingTimeout.value)
+      typingTimeout.value = null
+    }
+  }
+}
+
+const setPartnerTyping = (typing: boolean) => {
+  partnerTyping.value = typing
+}
+
+// Expose methods to parent
 defineExpose({
-  addMessage: (messageData: any) => addMessage(messageData, false)
+  addMessage: (messageData: any) => addMessage(messageData, false),
+  setPartnerTyping
 })
 </script>
 
@@ -238,6 +299,68 @@ defineExpose({
   color: #4ade80;
   line-height: 1.4;
   word-break: break-word;
+}
+
+/* Typing indicator styles */
+.typing-indicator {
+  padding: 0.75rem 1rem;
+  margin: 0.5rem;
+  background: rgba(74, 222, 128, 0.1);
+  border-left: 3px solid #4ade80;
+  border-radius: 0.5rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.typing-animation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4ade80;
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 2px;
+}
+
+.typing-dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #4ade80;
+  animation: typingPulse 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes typingPulse {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .input-area {

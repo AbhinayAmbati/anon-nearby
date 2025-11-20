@@ -40,6 +40,9 @@ app.use(socketConnectionLimiter);
 await connectDatabase();
 const redisClient = await connectRedis();
 
+// Make redisClient available to routes
+app.locals.redisClient = redisClient;
+
 // Routes
 app.use('/api/users', userRoutes);
 

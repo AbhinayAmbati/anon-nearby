@@ -34,6 +34,59 @@ router.get('/stats', statsLimiter, async (req, res) => {
   }
 });
 
+// Get nearby users count for a specific location
+router.post('/nearby-count', locationLimiter, async (req, res) => {
+  try {
+    const { latitude, longitude, radius = 1000 } = req.body;
+    
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: 'Location coordinates required' });
+    }
+    
+    // Validate radius
+    const searchRadius = [500, 1000, 3000, 5000].includes(radius) ? radius : 1000;
+    
+    let nearbyCount = 0;
+    
+    try {
+      // Try Redis GEO first
+      const redisClient = req.app.locals.redisClient;
+      if (redisClient) {
+        const nearbyUsers = await redisClient.geoRadius(
+          'user_locations',
+          longitude,
+          latitude,
+          searchRadius,
+          'm'
+        );
+        nearbyCount = nearbyUsers.length;
+      } else {
+        throw new Error('Redis not available');
+      }
+    } catch (error) {
+      // Fall back to in-memory storage
+      const nearbyUsers = inMemoryStorage.findNearbyUsers(
+        latitude,
+        longitude,
+        searchRadius,
+        null // Don't exclude any user for counting
+      );
+      nearbyCount = nearbyUsers.length;
+    }
+    
+    res.json({
+      nearbyCount,
+      radius: searchRadius,
+      location: { latitude, longitude },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Error getting nearby count:', error);
+    res.status(500).json({ error: 'Failed to get nearby user count' });
+  }
+});
+
 // Health check for user service
 router.get('/health', async (req, res) => {
   try {

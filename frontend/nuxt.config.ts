@@ -7,7 +7,7 @@ export default defineNuxtConfig({
   ],
   runtimeConfig: {
     public: {
-      socketUrl: 'http://localhost:3001'
+      socketUrl: process.env.NUXT_PUBLIC_API_URL
     }
   },
   ssr: false, // Disable SSR for real-time features
