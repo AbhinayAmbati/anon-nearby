@@ -158,16 +158,10 @@
               </div>
               
               <!-- Typing indicator -->
-              <div v-if="partnerTyping" class="mb-3 sm:mb-4">
-                <div class="typing-indicator">
-                  <div class="typing-animation">
-                    <span class="text-green-400/80 text-sm">{{ partnerCodename }} is typing</span>
-                    <div class="typing-dots">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-                  </div>
+              <div v-if="partnerTyping" class="mb-3 sm:mb-4 flex flex-col">
+                <label>{{ partnerCodename }}</label>
+                <div class="flex space-x-2 flex-col">  
+                  <span class="text-green-400/80 text-sm">typing<span class="typing-dots">...</span></span>
                 </div>
               </div>
             </div>
@@ -793,53 +787,20 @@ body {
   scrollbar-color: #166534 #111827;
 }
 
-/* Typing indicator styles */
-.typing-indicator {
-  padding: 0.75rem 1rem;
-  background: rgba(74, 222, 128, 0.1);
-  border-left: 3px solid #4ade80;
-  border-radius: 0.5rem;
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.typing-animation {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #4ade80;
-  font-size: 0.875rem;
-  opacity: 0.8;
-}
 
 .typing-dots {
-  display: flex;
-  gap: 2px;
+  animation: typingAnimation 1.5s infinite;
 }
 
-.typing-dots span {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background-color: #4ade80;
-  animation: typingPulse 1.4s infinite ease-in-out;
-}
-
-.typing-dots span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.typing-dots span:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-@keyframes typingPulse {
-  0%, 80%, 100% {
-    opacity: 0.3;
-    transform: scale(0.8);
+@keyframes typingAnimation {
+  0%, 16.66% {
+    opacity: 0;
   }
-  40% {
+  33.33%, 50% {
     opacity: 1;
-    transform: scale(1);
+  }
+  66.66%, 100% {
+    opacity: 0;
   }
 }
 
