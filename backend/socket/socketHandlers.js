@@ -2,6 +2,7 @@ import ActiveSession from '../models/ActiveSession.js';
 import ChatRoom from '../models/ChatRoom.js';
 import { generateCodename, generateSessionId, generateRoomId, calculateDistance } from '../utils/helpers.js';
 import { inMemoryStorage } from '../utils/inMemoryStorage.js';
+import { socketRateLimiter } from '../middleware/socketRateLimiter.js';
 
 const LOCATION_RADIUS = parseInt(process.env.LOCATION_RADIUS) || 1000; // meters
 
@@ -16,6 +17,14 @@ export const setupSocketHandlers = (io, redisClient) => {
   io.on('connection', (socket) => {
     console.log(`🟩 User connected: ${socket.id}`);
     
+    // Rate limit connection attempts
+    const clientIp = socket.handshake.address || socket.conn.remoteAddress;
+    if (!socketRateLimiter.checkConnectionLimit(clientIp)) {
+      socket.emit('error', { message: 'Too many connection attempts. Please wait.' });
+      socket.disconnect();
+      return;
+    }
+    
     let userSession = null;
 
     // Handle user joining the grid
@@ -25,6 +34,13 @@ export const setupSocketHandlers = (io, redisClient) => {
         
         if (!latitude || !longitude) {
           socket.emit('error', { message: 'Location coordinates required' });
+          return;
+        }
+
+        // Rate limit location requests
+        const clientIp = socket.handshake.address || socket.conn.remoteAddress;
+        if (!socketRateLimiter.checkLocationLimit(clientIp)) {
+          socket.emit('error', { message: 'Too many location requests. Please wait.' });
           return;
         }
 
@@ -131,6 +147,12 @@ export const setupSocketHandlers = (io, redisClient) => {
         if (!userSession || !userSession.chatRoomId) {
           console.log(`❌ No active chat for socket ${socket.id}`);
           socket.emit('error', { message: 'Not in an active chat' });
+          return;
+        }
+
+        // Rate limit message sending
+        if (!socketRateLimiter.checkMessageLimit(userSession.sessionId)) {
+          socket.emit('error', { message: 'Too many messages. Please slow down.' });
           return;
         }
 

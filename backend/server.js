@@ -7,6 +7,11 @@ import { connectDatabase } from './config/database.js';
 import { connectRedis } from './config/redis.js';
 import { setupSocketHandlers } from './socket/socketHandlers.js';
 import userRoutes from './routes/userRoutes.js';
+import { 
+  generalLimiter, 
+  strictLimiter, 
+  socketConnectionLimiter 
+} from './middleware/rateLimiter.js';
 
 dotenv.config();
 
@@ -25,6 +30,11 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Rate limiting middleware
+app.use('/api/', generalLimiter);
+app.use('/api/auth/', strictLimiter);
+app.use(socketConnectionLimiter);
 
 // Connect to databases
 await connectDatabase();
