@@ -99,15 +99,15 @@
           <p class="text-green-400/70 mb-4 sm:mb-6 text-sm sm:text-base px-4">Scanning for nearby nodes...</p>
           
           <!-- Search Radius Selector -->
-          <div class="mb-6 sm:mb-8">
+          <div class="mb-6 sm:mb-8 relative z-20">
             <p class="text-green-400/60 text-xs sm:text-sm mb-3">Search Radius</p>
-            <div class="flex justify-center space-x-2 sm:space-x-4 px-4">
+            <div class="flex justify-center space-x-2 sm:space-x-4 px-4 relative z-20">
               <button
                 v-for="radius in radiusOptions"
                 :key="radius.value"
                 @click="updateSearchRadius(radius.value)"
                 :class="[
-                  'px-3 py-2 text-xs sm:text-sm font-mono rounded border transition-all duration-200 radius-btn',
+                  'px-3 py-2 text-xs sm:text-sm font-mono rounded border radius-btn relative z-20',
                   selectedRadius === radius.value
                     ? 'bg-green-400 text-black border-green-400 font-bold'
                     : 'bg-transparent text-green-400 border-green-400/30 hover:border-green-400/60'
@@ -118,13 +118,13 @@
             </div>
           </div>
           
-          <div class="w-24 h-24 sm:w-32 sm:h-32 mx-auto relative">
+          <div class="w-24 h-24 sm:w-32 sm:h-32 mx-auto relative z-10">
             <!-- Moving circles animation -->
-            <div class="absolute inset-0 border-2 border-green-400/60 rounded-full ripple-animation"></div>
-            <div class="absolute inset-0 border-2 border-green-400/40 rounded-full ripple-animation" style="animation-delay: 1s;"></div>
-            <div class="absolute inset-0 border-2 border-green-400/20 rounded-full ripple-animation" style="animation-delay: 2s;"></div>
+            <div class="absolute inset-0 border-2 border-green-400/60 rounded-full ripple-animation z-10"></div>
+            <div class="absolute inset-0 border-2 border-green-400/40 rounded-full ripple-animation z-10" style="animation-delay: 1s;"></div>
+            <div class="absolute inset-0 border-2 border-green-400/20 rounded-full ripple-animation z-10" style="animation-delay: 2s;"></div>
             <!-- Center dot -->
-            <div class="absolute top-1/2 left-1/2 w-3 h-3 bg-green-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+            <div class="absolute top-1/2 left-1/2 w-3 h-3 bg-green-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse z-10"></div>
           </div>
         </div>
       </div>
@@ -674,13 +674,15 @@ const sendMessage = async (message: string) => {
 }
 
 const updateSearchRadius = (radius: number) => {
+  console.log('🎯 Radius button clicked:', radius + 'm')
   selectedRadius.value = radius
   console.log('🎯 Search radius updated to:', radius + 'm')
+  console.log('📊 Current selectedRadius:', selectedRadius.value)
   
-  // If currently scanning, restart with new radius
-  if (appState.value === 'scanning' && socket) {
-    console.log('🔄 Restarting search with new radius...')
-    initializeGridConnection()
+  // If connected and have socket, send radius update
+  if (socket && socket.connected) {
+    console.log('🔄 Sending radius update to server...')
+    socket.emit('update_radius', { radius })
   }
 }
 
@@ -983,9 +985,11 @@ body {
 
 /* Radius button animations */
 .radius-btn {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
+  z-index: 30 !important;
+  pointer-events: auto !important;
 }
 
 .radius-btn::before {
@@ -997,6 +1001,7 @@ body {
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.2), transparent);
   transition: left 0.5s;
+  z-index: -1;
 }
 
 .radius-btn:hover::before {

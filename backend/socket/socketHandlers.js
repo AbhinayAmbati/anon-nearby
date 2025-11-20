@@ -279,9 +279,51 @@ export const setupSocketHandlers = (io, redisClient) => {
       }
     });
 
+    // Handle search radius update
+    socket.on('update_radius', async (data) => {
+      try {
+        const { radius } = data;
+        
+        // Validate radius parameter
+        const validRadius = radius && [500, 1000, 3000, 5000].includes(radius) ? radius : 1000;
+        
+        if (userSession) {
+          // Update session radius
+          userSession.searchRadius = validRadius;
+          
+          // Update in database/storage
+          try {
+            if (useMongoDb) {
+              await ActiveSession.updateOne(
+                { sessionId: userSession.sessionId },
+                { searchRadius: validRadius }
+              );
+            } else {
+              await inMemoryStorage.updateSession(userSession.sessionId, { searchRadius: validRadius });
+            }
+          } catch (error) {
+            useMongoDb = false;
+            await inMemoryStorage.updateSession(userSession.sessionId, { searchRadius: validRadius });
+          }
+          
+          console.log(`🎯 ${userSession.codename} updated search radius to: ${validRadius}m`);
+          
+          // If user is actively scanning, trigger a new search with updated radius
+          if (!userSession.chatRoomId) {
+            console.log(`🔄 Triggering new search with updated radius for ${userSession.codename}`);
+            await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId);
+          }
+        }
+        
+      } catch (error) {
+        console.error('Error updating search radius:', error);
+      }
+    });
+
     // Handle user disconnection
     socket.on('disconnect', async () => {
       console.log(`🔴 User disconnected: ${socket.id}`);
+      
       
       // Clear scanning interval
       if (socket.scanningInterval) {
