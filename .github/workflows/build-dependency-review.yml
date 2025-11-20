@@ -1,0 +1,70 @@
+name: "Build & Dependency Review"
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "**/package.json"
+      - "**/package-lock.json"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "**/package.json"
+      - "**/package-lock.json"
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  ci-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Install Node (you can adjust version)
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Install root dependencies (if monorepo)
+      - name: Install root deps
+        run: npm install
+
+      # Install frontend dependencies
+      - name: Install frontend deps
+        run: |
+          cd frontend
+          npm install
+
+      # Build frontend (Nuxt)
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      # Install backend dependencies
+      - name: Install backend deps
+        run: |
+          cd backend
+          npm install
+
+      # Build backend (if you have a build script)
+      - name: Build backend
+        run: |
+          cd backend
+          if npm run | grep -q "build"; then
+            npm run build
+          else
+            echo "No backend build step"
+          fi
+
+      # Dependency Review
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          comment-summary-in-pr: always
