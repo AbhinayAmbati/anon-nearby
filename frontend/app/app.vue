@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="min-h-screen bg-gray-900 text-green-400 font-mono">
+  <div id="app" class="min-h-screen bg-black text-green-400 font-mono">
     <!-- Debug info -->
     <div class="fixed top-2 left-2 text-xs bg-black bg-opacity-50 p-1 sm:p-2 rounded z-50 text-green-400 font-mono">
       <div class="hidden sm:block">
@@ -130,11 +130,11 @@
       </div>
 
       <!-- Chat State -->
-      <div v-else-if="appState === 'chatting'" key="chatting" class="flex flex-col h-screen bg-gray-800">
+      <div v-else-if="appState === 'chatting'" key="chatting" class="flex flex-col h-screen bg-black">
         <div class="flex-1 flex flex-col max-w-sm sm:max-w-2xl lg:max-w-4xl mx-auto w-full p-6 sm:p-4">
-          <div class="bg-gray-900 rounded-lg border border-green-400/30 overflow-hidden flex flex-col h-full">
+          <div class="bg-black rounded-lg border border-green-400/30 overflow-hidden flex flex-col h-full">
             <!-- Chat header -->
-            <div class="bg-gray-800 px-3 sm:px-4 py-2 sm:py-3 border-b border-green-400/30 flex justify-between items-center flex-shrink-0">
+            <div class="bg-black px-3 sm:px-4 py-2 sm:py-3 border-b border-green-400/30 flex justify-between items-center flex-shrink-0">
               <div class="flex items-center space-x-2">
                 <div class="w-2 h-2 bg-green-400 rounded-full connection-indicator"></div>
                 <span class="text-green-400 font-mono text-sm sm:text-base truncate">Connected to {{ partnerCodename }}</span>
@@ -148,7 +148,7 @@
             </div>
             
             <!-- Messages area -->
-            <div class="flex-1 p-3 sm:p-4 overflow-y-auto bg-gray-900" ref="messagesContainer">
+            <div class="flex-1 p-3 sm:p-4 overflow-y-auto bg-black" ref="messagesContainer">
               <div v-if="messages.length === 0" class="text-center text-green-400/60 py-4 sm:py-8 text-sm sm:text-base">
                 Start your anonymous conversation...
               </div>
@@ -167,13 +167,13 @@
             </div>
             
             <!-- Input area -->
-            <div class="bg-gray-800 p-3 sm:px-4 sm:py-3 border-t border-green-400/30 flex-shrink-0">
+            <div class="bg-black p-3 sm:px-4 sm:py-3 border-t border-green-400/30 flex-shrink-0">
               <form @submit.prevent="sendChatMessage" class="flex space-x-2">
                 <input
                   v-model="messageInput"
                   type="text"
                   placeholder="Type your message..."
-                  class="flex-1 bg-gray-900 border border-green-400/30 text-green-400 px-2 sm:px-3 py-2 rounded font-mono focus:outline-none focus:border-green-400 text-sm sm:text-base"
+                  class="flex-1 bg-black border border-green-400/30 text-green-400 px-2 sm:px-3 py-2 rounded font-mono focus:outline-none focus:border-green-400 text-sm sm:text-base"
                   :disabled="!connected"
                   @input="handleTyping"
                   @focus="handleTypingStart"
@@ -236,7 +236,7 @@
 
     <!-- Terms Modal -->
     <div v-if="showTerms" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 z-50">
-      <div class="bg-gray-900 border border-green-400/30 rounded-lg max-w-2xl w-full max-h-[90vh] sm:max-h-96 overflow-y-auto">
+      <div class="bg-black border border-green-400/30 rounded-lg max-w-2xl w-full max-h-[90vh] sm:max-h-96 overflow-y-auto">
         <div class="p-4 sm:p-6">
           <div class="flex justify-between items-center mb-3 sm:mb-4">
             <h2 class="text-lg sm:text-xl font-mono font-bold text-green-400">Terms of Service</h2>
@@ -267,7 +267,7 @@
 
     <!-- Privacy Policy Modal -->
     <div v-if="showPrivacy" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 z-50">
-      <div class="bg-gray-900 border border-green-400/30 rounded-lg max-w-2xl w-full max-h-[90vh] sm:max-h-96 overflow-y-auto">
+      <div class="bg-black border border-green-400/30 rounded-lg max-w-2xl w-full max-h-[90vh] sm:max-h-96 overflow-y-auto">
         <div class="p-4 sm:p-6">
           <div class="flex justify-between items-center mb-3 sm:mb-4">
             <h2 class="text-lg sm:text-xl font-mono font-bold text-green-400">Privacy Policy</h2>
