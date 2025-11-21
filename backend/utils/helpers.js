@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 
 const codenameAdjectives = [
   'Cipher', 'Echo', 'Pulse', 'Void', 'Flux', 'Ghost', 'Neon', 'Pixel', 
@@ -14,10 +15,19 @@ const codenameNouns = [
   'Arrow', 'Bolt', 'Star', 'Moon', 'Sun', 'Comet'
 ];
 
+/**
+ * Generate cryptographically secure random integer between 0 and max (exclusive)
+ */
+const secureRandomInt = (max) => {
+  const randomBytes = crypto.randomBytes(4);
+  const randomInt = randomBytes.readUInt32BE(0);
+  return randomInt % max;
+};
+
 export const generateCodename = () => {
-  const adjective = codenameAdjectives[Math.floor(Math.random() * codenameAdjectives.length)];
-  const noun = codenameNouns[Math.floor(Math.random() * codenameNouns.length)];
-  const number = Math.floor(Math.random() * 99) + 1;
+  const adjective = codenameAdjectives[secureRandomInt(codenameAdjectives.length)];
+  const noun = codenameNouns[secureRandomInt(codenameNouns.length)];
+  const number = secureRandomInt(99) + 1;
   
   return `${adjective}${noun}_${number}`;
 };

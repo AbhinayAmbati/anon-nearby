@@ -5,6 +5,7 @@ import { inMemoryStorage } from '../utils/inMemoryStorage.js';
 import { socketRateLimiter } from '../middleware/socketRateLimiter.js';
 import SmartMatchmakingEngine from '../services/matchmakingEngine.js';
 import AbuseDetectionLayer from '../middleware/abuseDetection.js';
+import crypto from 'crypto';
 
 const LOCATION_RADIUS = parseInt(process.env.LOCATION_RADIUS) || 1000; // meters
 const CHAT_TIMEOUT_MINUTES = parseInt(process.env.CHAT_TIMEOUT_MINUTES) || 10; // Default 10 minutes
@@ -523,8 +524,10 @@ const fallbackProximitySearch = async (socket, userSession, redisClient, io, ses
       return;
     }
     
-    // Select random user from nearby users
-    const randomUser = nearbyUsers[Math.floor(Math.random() * nearbyUsers.length)];
+    // Select random user from nearby users using cryptographically secure random
+    const randomBytes = crypto.randomBytes(4);
+    const randomIndex = randomBytes.readUInt32BE(0) % nearbyUsers.length;
+    const randomUser = nearbyUsers[randomIndex];
     console.log(`🎯 Fallback match found: ${userSession.codename} ↔ ${randomUser.codename}`);
     
     // Create chat room
@@ -968,9 +971,11 @@ const triggerScanningForAllUsers = async (redisClient, io, sessionsBySocketId, m
       const socket = io.sockets.sockets.get(session.socketId);
       if (socket && sessionsBySocketId.has(session.socketId)) {
         // Small delay to prevent overwhelming the system
+        const randomBytes = crypto.randomBytes(2);
+        const secureDelay = (randomBytes.readUInt16BE(0) % 1000); // Secure random delay 0-999ms
         setTimeout(async () => {
           await findNearbyUser(socket, session, redisClient, io, sessionsBySocketId, matchmakingEngine);
-        }, Math.random() * 1000); // Random delay 0-1 second
+        }, secureDelay);
       }
     }
     
