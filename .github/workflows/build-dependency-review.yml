@@ -25,15 +25,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Install Node (you can adjust version)
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      # Install root dependencies (if monorepo)
-      - name: Install root deps
-        run: npm install
 
       # Install frontend dependencies
       - name: Install frontend deps
@@ -53,7 +48,7 @@ jobs:
           cd backend
           npm install
 
-      # Build backend (if you have a build script)
+      # Build backend (if build script exists)
       - name: Build backend
         run: |
           cd backend
@@ -63,7 +58,6 @@ jobs:
             echo "No backend build step"
           fi
 
-      # Dependency Review
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
         with:
