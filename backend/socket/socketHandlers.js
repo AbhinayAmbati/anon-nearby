@@ -524,9 +524,8 @@ const fallbackProximitySearch = async (socket, userSession, redisClient, io, ses
       return;
     }
     
-    // Select random user from nearby users using cryptographically secure random
-    const randomBytes = crypto.randomBytes(4);
-    const randomIndex = randomBytes.readUInt32BE(0) % nearbyUsers.length;
+    // Select random user from nearby users using Node.js crypto.randomInt() for unbiased selection
+    const randomIndex = crypto.randomInt(0, nearbyUsers.length);
     const randomUser = nearbyUsers[randomIndex];
     console.log(`🎯 Fallback match found: ${userSession.codename} ↔ ${randomUser.codename}`);
     
@@ -970,9 +969,8 @@ const triggerScanningForAllUsers = async (redisClient, io, sessionsBySocketId, m
     for (const session of scanningSessions) {
       const socket = io.sockets.sockets.get(session.socketId);
       if (socket && sessionsBySocketId.has(session.socketId)) {
-        // Small delay to prevent overwhelming the system
-        const randomBytes = crypto.randomBytes(2);
-        const secureDelay = (randomBytes.readUInt16BE(0) % 1000); // Secure random delay 0-999ms
+        // Small delay to prevent overwhelming the system - using crypto.randomInt() for unbiased delay
+        const secureDelay = crypto.randomInt(0, 1000); // Unbiased random delay 0-999ms
         setTimeout(async () => {
           await findNearbyUser(socket, session, redisClient, io, sessionsBySocketId, matchmakingEngine);
         }, secureDelay);

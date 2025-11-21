@@ -16,12 +16,12 @@ const codenameNouns = [
 ];
 
 /**
- * Generate cryptographically secure random integer between 0 and max (exclusive)
+ * Generate cryptographically secure unbiased random integer between 0 and max (exclusive)
+ * Uses Node.js crypto.randomInt() for optimal unbiased random number generation
  */
 const secureRandomInt = (max) => {
-  const randomBytes = crypto.randomBytes(4);
-  const randomInt = randomBytes.readUInt32BE(0);
-  return randomInt % max;
+  if (max <= 1) return 0;
+  return crypto.randomInt(0, max);
 };
 
 export const generateCodename = () => {
