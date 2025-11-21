@@ -258,17 +258,20 @@
             <p><strong>5. Location Usage</strong><br>
             Your location is used only for proximity matching. Location data is not stored permanently. Users are responsible for their own location privacy and safety.</p>
             
-            <p><strong>6. User Conduct</strong><br>
-            Users must not engage in harassment, illegal activities, or sharing of harmful content. We are not responsible for monitoring or controlling user behavior.</p>
+            <p><strong>6. User Conduct & AI Content Moderation</strong><br>
+            Users must not engage in harassment, threats, hate speech, illegal activities, or sharing of harmful content. Your messages are automatically analyzed by AI systems (Google Gemini) to detect violations. Progressive enforcement includes warnings, temporary muting, and blocking. We are not responsible for monitoring all content or preventing all harmful behavior, but automated systems help maintain platform safety.</p>
             
-            <p><strong>7. NO WARRANTIES OR GUARANTEES</strong><br>
-            This service is provided "AS-IS" without any warranties, guarantees, or promises of reliability, safety, or functionality.</p>
+            <p><strong>7. AI Processing Acknowledgment</strong><br>
+            By using this service, you acknowledge that your messages will be processed by artificial intelligence for content moderation. AI systems may occasionally produce false positives or miss violations. You accept the risks of automated content analysis and potential moderation errors.</p>
             
-            <p><strong>8. Age Restriction & Parental Responsibility</strong><br>
-            Users must be 18+ to use this service. Parents are responsible for monitoring their children's internet usage.</p>
+            <p><strong>8. NO WARRANTIES OR GUARANTEES</strong><br>
+            This service is provided "AS-IS" without any warranties, guarantees, or promises of reliability, safety, functionality, or accuracy of AI content moderation. AI systems may make errors in content analysis and enforcement decisions.</p>
             
-            <p><strong>9. INDEMNIFICATION</strong><br>
-            By using this service, you agree to hold harmless and indemnify ANON-NEARBY from any claims, damages, or legal issues arising from your use of the service.</p>
+            <p><strong>9. Age Restriction & Parental Responsibility</strong><br>
+            Users must be 18+ to use this service. Parents are responsible for monitoring their children's internet usage and understanding that AI content moderation cannot guarantee complete protection from harmful content.</p>
+            
+            <p><strong>10. INDEMNIFICATION</strong><br>
+            By using this service, you agree to hold harmless and indemnify ANON-NEARBY from any claims, damages, or legal issues arising from your use of the service, including any consequences of AI content moderation decisions or failures.</p>
           </div>
         </div>
       </div>
@@ -290,10 +293,14 @@
             Messages are delivered through real-time WebSocket connections (Socket.IO) and are NEVER stored in any database. The complete flow: User types → Socket.IO broadcast → Recipient receives. Messages exist only in browser memory during active sessions and are instantly destroyed when chats end.</p>
             
             
+            <p><strong>AI Content Processing & Moderation:</strong><br>
+            Your messages are analyzed by Google Gemini AI to detect harmful content including harassment, threats, and inappropriate material. This AI analysis happens in real-time and no message content is permanently stored. Only abuse patterns are tracked temporarily using anonymous session identifiers that expire within 24 hours.</p>
+
             <p><strong>Data We Collect:</strong><br>
             • Temporary location coordinates (for proximity matching only)<br>
             • Auto-generated session identifiers and codenames<br>
-            • Real-time chat messages (exist only in memory, never stored)<br>
+            • Real-time chat messages (analyzed by AI but never stored)<br>
+            • Anonymous abuse detection metrics (expire within 24 hours)<br>
             • Connection metadata (IP addresses, socket IDs) for technical functionality</p>
             
             <p><strong>Data We Don't Collect:</strong><br>
@@ -301,7 +308,8 @@
             • Chat history or message logs<br>
             • User accounts or profiles<br>
             • Device identifiers or tracking cookies<br>
-            • Persistent user preferences or settings</p>
+            • Persistent user preferences or settings<br>
+            • Permanent records of AI content analysis</p>
             
             <p><strong>Network Security & Data in Transit:</strong><br>
             While we use WebSocket connections, data transmitted over the internet may be vulnerable to interception. WE CANNOT GUARANTEE secure transmission or prevent man-in-the-middle attacks. Users should assume all communications may be monitored by third parties.</p>
@@ -313,13 +321,63 @@
             We are NOT responsible for data breaches, unauthorized access, network vulnerabilities, WebSocket interception, or any privacy violations that may occur during use of this service. This includes but is not limited to: network eavesdropping, ISP monitoring, government surveillance, or malicious actors.</p>
             
             <p><strong>Data Sharing & Third Parties:</strong><br>
-            We do not intentionally share, sell, or distribute user data with third parties. However, we cannot control or prevent unauthorized access by malicious actors, government agencies, ISPs, or other network intermediaries who may monitor WebSocket traffic.</p>
+            We use Google Gemini AI API for content moderation which requires temporary processing of your messages by Google's systems. However, your messages are not permanently stored by us or Google for AI training. We do not intentionally share, sell, or distribute user data with other third parties. However, we cannot control or prevent unauthorized access by malicious actors, government agencies, ISPs, or other network intermediaries who may monitor WebSocket traffic.</p>
+
+            <p><strong>AI Processing & Automated Moderation:</strong><br>
+            Your messages are automatically analyzed by AI systems to maintain platform safety. This includes: detection of harmful content, progressive enforcement (warnings to temporary blocks), anonymous tracking of violation patterns, and real-time content filtering. AI analysis decisions may occasionally produce false positives or miss violations.</p>
             
             <p><strong>User Responsibility & Safety:</strong><br>
             Users are solely responsible for: protecting their own privacy, not sharing sensitive information, understanding the risks of anonymous communication platforms, not meeting strangers from the app, and ensuring their own physical and digital safety.</p>
             
             <p><strong>Your Rights & Technical Limitations:</strong><br>
             Since we don't store personal data permanently, there's nothing to delete or modify. Simply close the app to end all data processing. However, WE PROVIDE NO GUARANTEES ABOUT DATA PRIVACY, SECURITY, OR COMPLETE DATA DELETION from network logs, ISP records, or other intermediate systems.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content Moderation Dialog -->
+    <div v-if="showContentDialog" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+      <div class="bg-black border rounded-lg max-w-md w-full" :class="{
+        'border-yellow-400/50': dialogData.type === 'warning',
+        'border-red-400/50': dialogData.type === 'error',
+        'border-green-400/50': dialogData.type === 'info'
+      }">
+        <div class="p-6">
+          <div class="flex items-center mb-4">
+            <div class="mr-3">
+              <svg v-if="dialogData.type === 'warning'" class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+              </svg>
+              <svg v-else-if="dialogData.type === 'error'" class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <svg v-else class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg font-mono font-bold" :class="{
+              'text-yellow-400': dialogData.type === 'warning',
+              'text-red-400': dialogData.type === 'error',
+              'text-green-400': dialogData.type === 'info'
+            }">{{ dialogData.title }}</h3>
+          </div>
+          
+          <p class="text-green-400/80 font-mono text-sm mb-6 leading-relaxed">
+            {{ dialogData.message }}
+          </p>
+          
+          <div class="flex justify-end">
+            <button 
+              @click="closeContentDialog"
+              class="px-4 py-2 bg-transparent border font-mono text-sm font-semibold transition-all duration-200" :class="{
+                'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black': dialogData.type === 'warning',
+                'border-red-400 text-red-400 hover:bg-red-400 hover:text-black': dialogData.type === 'error',
+                'border-green-400 text-green-400 hover:bg-green-400 hover:text-black': dialogData.type === 'info'
+              }"
+            >
+              GOT IT
+            </button>
           </div>
         </div>
       </div>
@@ -389,6 +447,14 @@ const partnerTyping = ref(false)
 const isTyping = ref(false)
 const typingTimeout = ref<NodeJS.Timeout | null>(null)
 
+// Content moderation dialog
+const showContentDialog = ref(false)
+const dialogData = ref({
+  title: '',
+  message: '',
+  type: 'warning' // 'warning' | 'error' | 'info'
+})
+
 // Search radius
 const selectedRadius = ref(1000)
 const radiusOptions = [
@@ -408,6 +474,12 @@ const messageInput = ref('')
 const messagesContainer = ref<HTMLElement>()
 const showTerms = ref(false)
 const showPrivacy = ref(false)
+
+// Close content moderation dialog
+const closeContentDialog = () => {
+  showContentDialog.value = false
+  dialogData.value = { title: '', message: '', type: 'warning' }
+}
 
 // User location storage
 const userLocation = ref<{latitude: number, longitude: number} | null>(null)
@@ -551,6 +623,26 @@ const initializeSocket = async () => {
           messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
         }
       })
+    })
+
+    socket.on('message_blocked', (data: any) => {
+      console.warn('🚫 Message blocked:', data)
+      showContentDialog.value = true
+      dialogData.value = {
+        title: data.title || 'Message Not Allowed',
+        message: data.message || 'Your message cannot be sent because it contains inappropriate content.',
+        type: 'warning'
+      }
+    })
+
+    socket.on('temporarily_muted', (data: any) => {
+      console.warn('🔇 Temporarily muted:', data)
+      showContentDialog.value = true
+      dialogData.value = {
+        title: data.title || 'Temporarily Muted',
+        message: data.message || 'You have been temporarily muted for inappropriate content.',
+        type: 'error'
+      }
     })
 
     socket.on('partner_disconnected', (data: any) => {

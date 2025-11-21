@@ -8,9 +8,13 @@ ANON-NEARBY provides anonymous, real-time chat functionality between users withi
 
 ## Core Functionality
 
-The application assigns users creative codenames like "CipherNode_42" or "VectorStar_73" to maintain anonymity while adding personality. Using geolocation services, it identifies other active users within proximity and facilitates instant chat connections.
+The application assigns users creative codenames like "CipherNode_42" or "VectorStar_73" to maintain anonymity while adding personality. Using geolocation services, it identifies other active users within proximity and facilitates instant chat connections through an intelligent matchmaking system.
 
-Conversations are completely ephemeral - once either participant disconnects, all messages are permanently deleted. No history is maintained, ensuring true anonymity and privacy.
+Conversations are completely ephemeral - once either participant disconnects, all messages are permanently deleted. No history is maintained, ensuring true anonymity and privacy. All conversations are protected by AI-powered content moderation to maintain a safe and respectful environment.
+
+**Smart Matchmaking Engine**: Advanced algorithm uses distance-based ranking, wait-time scoring, compatibility analysis, and freshness scoring to create optimal connections between users. The system considers multiple factors including search radius compatibility, behavioral patterns, and connection history to enhance match quality.
+
+**AI-Powered Content Moderation**: Real-time message filtering using Google's Gemini AI and pattern recognition to detect inappropriate content, harassment, spam, and abusive language. Progressive enforcement system provides warnings, temporary restrictions, and escalating penalties for policy violations.
 
 ## Technical Stack
 
@@ -30,15 +34,19 @@ Utilizes Redis GEO commands for efficient proximity searches within the configur
 
 **Anonymous Sessions**: No registration, accounts, or personal information required. Users are identified only by temporary codenames during active sessions.
 
-**Proximity-Based Matching**: Automatically discovers and connects users within a 1000-meter radius using precise geolocation services.
+**Smart Proximity Matching**: Intelligent algorithm discovers and connects users within customizable radius (500m-5km) using multi-factor scoring including distance, wait-time, compatibility, and freshness.
 
-**Real-Time Communication**: Instant message delivery with Socket.IO for responsive chat experiences.
+**AI Content Moderation**: Real-time message analysis using Google Gemini AI to detect and prevent inappropriate content, harassment, spam, and abusive language. Progressive enforcement with warnings, shadow bans, and temporary restrictions.
+
+**Real-Time Communication**: Instant message delivery with Socket.IO for responsive chat experiences, including typing indicators and connection status.
 
 **Ephemeral Conversations**: All chat data is automatically purged when sessions end, ensuring complete privacy and no permanent records.
 
-**Responsive Interface**: Optimized user experience across desktop, tablet, and mobile devices with touch-friendly controls.
+**Responsive Interface**: Optimized user experience across desktop, tablet, and mobile devices with touch-friendly controls and Matrix-inspired design.
 
 **Fallback Systems**: Redundant storage mechanisms ensure functionality even when primary database services experience issues.
+
+**Progressive Safety Measures**: Anonymous abuse detection using Redis TTL counters, behavioral analysis, and escalating penalties without compromising user privacy.
 
 ## Design Philosophy
 
@@ -79,8 +87,15 @@ Create a `.env` file in the backend directory with your database connection stri
 ```env
 MONGODB_URI=your_mongodb_connection_string
 REDIS_URL=your_redis_connection_string
+GEMINI_API_KEY=your_google_gemini_api_key
 LOCATION_RADIUS=1000
+CHAT_TIMEOUT_MINUTES=10
 ```
+
+**Required Services**:
+- **MongoDB**: Session and chat room management (with in-memory fallback)
+- **Redis**: Geospatial queries, smart matchmaking queues, and abuse detection counters
+- **Google Gemini AI**: Content moderation and abuse detection (optional - falls back to pattern matching)
 
 If database connections fail, the application automatically falls back to in-memory storage for development and testing.
 
@@ -167,7 +182,16 @@ Released under the MIT License. This allows for modification, distribution, and 
 
 ## Privacy and Security Notice
 
-This application processes location data for proximity matching purposes only. Users should exercise caution when sharing personal information during conversations. The developers assume no responsibility for user interactions or privacy decisions.
+This application processes location data for proximity matching purposes only. Message content is analyzed by AI systems (Google Gemini) for safety and moderation purposes, but no personal information is stored or linked to users. All processing is anonymous using hashed identifiers.
+
+**Data Processing**:
+- Location coordinates are used only for proximity matching
+- Messages are analyzed by AI for content moderation in real-time
+- No personal information, message history, or user profiles are stored
+- All tracking uses anonymous hashes with automatic expiration
+- Abuse detection operates on behavioral patterns without identity storage
+
+Users should exercise caution when sharing personal information during conversations. The developers assume no responsibility for user interactions or privacy decisions.
 
 ## Development Status
 

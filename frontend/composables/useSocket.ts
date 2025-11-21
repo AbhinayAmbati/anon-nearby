@@ -62,6 +62,16 @@ class SocketService {
       this.emit('message_received', data)
     })
 
+    this.socket.on('message_blocked', (data) => {
+      console.warn('🚫 Message blocked:', data.message)
+      this.emit('message_blocked', data)
+    })
+
+    this.socket.on('temporarily_muted', (data) => {
+      console.warn('🔇 Temporarily muted:', data.message)
+      this.emit('temporarily_muted', data)
+    })
+
     this.socket.on('partner_disconnected', (data) => {
       console.log('🔴 Partner disconnected')
       this.emit('partner_disconnected', data)
