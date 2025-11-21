@@ -3,6 +3,7 @@ import ChatRoom from '../models/ChatRoom.js';
 import { generateCodename, generateSessionId, generateRoomId, calculateDistance } from '../utils/helpers.js';
 import { inMemoryStorage } from '../utils/inMemoryStorage.js';
 import { socketRateLimiter } from '../middleware/socketRateLimiter.js';
+import SmartMatchmakingEngine from '../services/matchmakingEngine.js';
 
 const LOCATION_RADIUS = parseInt(process.env.LOCATION_RADIUS) || 1000; // meters
 const CHAT_TIMEOUT_MINUTES = parseInt(process.env.CHAT_TIMEOUT_MINUTES) || 10; // Default 10 minutes
@@ -17,6 +18,9 @@ export const setupSocketHandlers = (io, redisClient) => {
   
   // Store activity timeouts for chat rooms
   const chatTimeouts = new Map();
+  
+  // Initialize Smart Matchmaking Engine
+  const matchmakingEngine = new SmartMatchmakingEngine(redisClient);
   
   io.on('connection', (socket) => {
     console.log(`🟩 User connected: ${socket.id}`);
@@ -122,16 +126,16 @@ export const setupSocketHandlers = (io, redisClient) => {
         console.log(`🟩 ${codename} joined the grid at (${latitude}, ${longitude})`);
         
         // Try to find nearby users immediately
-        await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId);
+        await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId, matchmakingEngine);
         
         // Trigger scanning for all existing scanning users when someone new joins
-        await triggerScanningForAllUsers(redisClient, io, sessionsBySocketId);
+        await triggerScanningForAllUsers(redisClient, io, sessionsBySocketId, matchmakingEngine);
         
         // Set up periodic scanning for this user
         const scanningInterval = setInterval(async () => {
           // Only scan if user is still connected and in scanning mode
           if (sessionsBySocketId.has(socket.id) && userSession && !userSession.chatRoomId) {
-            await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId);
+            await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId, matchmakingEngine);
           } else {
             // Clear interval if user is no longer scanning
             clearInterval(scanningInterval);
@@ -311,7 +315,7 @@ export const setupSocketHandlers = (io, redisClient) => {
           // If user is actively scanning, trigger a new search with updated radius
           if (!userSession.chatRoomId) {
             console.log(`🔄 Triggering new search with updated radius for ${userSession.codename}`);
-            await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId);
+            await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId, matchmakingEngine);
           }
         }
         
@@ -349,95 +353,112 @@ export const setupSocketHandlers = (io, redisClient) => {
   });
 };
 
-// Find nearby users and create chat room
-const findNearbyUser = async (socket, userSession, redisClient, io, sessionsBySocketId) => {
-  try {
-    let nearbyUsers = [];
-    
-    // Use user's selected search radius or fall back to default
-    const searchRadius = userSession.searchRadius || LOCATION_RADIUS;
-    
-    try {
-      if (redisClient && useRedis) {
-        // Search for users within radius using Redis GEO
-        nearbyUsers = await redisClient.geoRadius(
-          'user_locations',
-          userSession.location.longitude,
-          userSession.location.latitude,
-          searchRadius,
-          'm',
-          { WITHDIST: true }
-        );
-      } else {
-        throw new Error('Redis not available');
-      }
-    } catch (error) {
-      console.log('📍 Using in-memory location matching');
-      useRedis = false;
-      // Use in-memory location search
-      nearbyUsers = inMemoryStorage.findNearbyUsers(
-        userSession.location.latitude,
-        userSession.location.longitude,
-        searchRadius,
-        userSession.sessionId
-      );
+// Helper function for matchmaking engine to get user session data
+const getUserSessionForMatchmaking = (userId) => {
+  // Find session by sessionId across all socket connections
+  for (const [socketId, session] of sessionsBySocketId.entries()) {
+    if (session.sessionId === userId) {
+      return session;
     }
+  }
+  return null;
+};
 
-    // Process nearby users concurrently for faster matching
-    const checkNearbyUser = async (nearby) => {
-      const [memberSessionId, distance] = nearby;
-      
-      if (memberSessionId === userSession.sessionId) return null;
-      
-      // Check if user is still active and not in a chat
-      let nearbySession;
-      try {
-        if (useMongoDb) {
-          nearbySession = await ActiveSession.findOne({
-            sessionId: memberSessionId,
-            isActive: true,
-            chatRoomId: null
-          });
-        } else {
-          nearbySession = await inMemoryStorage.findSession({ sessionId: memberSessionId });
-          if (nearbySession && (!nearbySession.isActive || nearbySession.chatRoomId)) {
-            nearbySession = null;
-          }
-        }
-      } catch (error) {
-        useMongoDb = false;
-        nearbySession = await inMemoryStorage.findSession({ sessionId: memberSessionId });
-        if (nearbySession && (!nearbySession.isActive || nearbySession.chatRoomId)) {
-          nearbySession = null;
-        }
-      }
-      
-      return nearbySession;
-    };
+// Enhanced nearby user matching using Smart Matchmaking Engine
+const findNearbyUser = async (socket, userSession, redisClient, io, sessionsBySocketId, matchmakingEngine) => {
+  try {
+    console.log(`🎯 ${userSession.codename} using Smart Matchmaking Engine...`);
     
-    // Check all nearby users concurrently
-    const nearbyChecks = nearbyUsers.map(checkNearbyUser);
-    const nearbyResults = await Promise.allSettled(nearbyChecks);
+    // Add current session data to matchmaking engine's session access
+    matchmakingEngine.getUserSessionData = getUserSessionForMatchmaking;
     
-    // Find first available user
-    for (const result of nearbyResults) {
-      if (result.status === 'fulfilled' && result.value) {
-        // Found a match! Create chat room
-        await createChatRoom(userSession, result.value, redisClient, io, sessionsBySocketId);
-        return;
-      }
+    // Add user to smart matchmaking queue
+    await matchmakingEngine.addToMatchmakingQueue(userSession);
+    
+    // Attempt to find optimal match
+    const matchedUser = await matchmakingEngine.findOptimalMatch(userSession);
+    
+    if (matchedUser) {
+      console.log(`✨ Smart match found: ${userSession.codename} ↔ ${matchedUser.codename}`);
+      
+      // Get queue status for logging
+      const queueStatus = await matchmakingEngine.getQueueStatus();
+      console.log(`📊 Queue status: ${queueStatus.queueSize} users waiting, avg wait: ${queueStatus.averageWaitTime}s`);
+      
+      // Create chat room between matched users
+      await createChatRoom(userSession, matchedUser, redisClient, io, sessionsBySocketId, matchmakingEngine);
+      return;
     }
     
-    // No nearby users found, stay in scanning mode
-    console.log(`🔍 ${userSession.codename} scanning for nearby users...`);
+    // No match found, user stays in queue
+    const queueStatus = await matchmakingEngine.getQueueStatus();
+    console.log(`🔍 ${userSession.codename} scanning with smart algorithm... (Queue: ${queueStatus.queueSize} users)`);
     
   } catch (error) {
-    console.error('Error finding nearby users:', error);
+    console.error('Error in smart matchmaking:', error);
+    // Fallback to basic proximity search if matchmaking fails
+    await fallbackProximitySearch(socket, userSession, redisClient, io, sessionsBySocketId);
+  }
+};
+
+// Fallback proximity search when smart matchmaking fails
+const fallbackProximitySearch = async (socket, userSession, redisClient, io, sessionsBySocketId) => {
+  try {
+    console.log(`🔄 ${userSession.codename} using fallback proximity search...`);
+    
+    let nearbyUsers = [];
+    
+    try {
+      if (useMongoDb) {
+        nearbyUsers = await ActiveSession.find({
+          sessionId: { $ne: userSession.sessionId },
+          isActive: true,
+          connectedWith: null,
+          location: {
+            $geoWithin: {
+              $centerSphere: [
+                [userSession.location.longitude, userSession.location.latitude],
+                userSession.searchRadius / 6371000 // Convert to radians
+              ]
+            }
+          }
+        });
+      } else {
+        const allSessions = await inMemoryStorage.getAllActiveSessions();
+        nearbyUsers = allSessions.filter(session => 
+          session.sessionId !== userSession.sessionId &&
+          session.isActive &&
+          !session.connectedWith &&
+          session.location &&
+          calculateDistance(userSession.location, session.location) <= userSession.searchRadius
+        );
+      }
+    } catch (error) {
+      console.error('Error in fallback proximity search:', error);
+      return;
+    }
+    
+    if (nearbyUsers.length === 0) {
+      console.log(`🔍 ${userSession.codename} scanning (fallback mode)...`);
+      return;
+    }
+    
+    // Select random user from nearby users
+    const randomUser = nearbyUsers[Math.floor(Math.random() * nearbyUsers.length)];
+    console.log(`🎯 Fallback match found: ${userSession.codename} ↔ ${randomUser.codename}`);
+    
+    // Create chat room
+    await createChatRoom(userSession, randomUser, redisClient, io, sessionsBySocketId);
+    
+  } catch (error) {
+    console.error('Error in fallback proximity search:', error);
   }
 };
 
 // Create a chat room between two users
-const createChatRoom = async (user1Session, user2Session, redisClient, io, sessionsBySocketId) => {
+const createChatRoom = async (user1Session, user2Session, redisClient, io, sessionsBySocketId, matchmakingEngine = null) => {
+  const chatStartTime = Date.now();
+  
   try {
     const roomId = generateRoomId();
     
@@ -582,6 +603,27 @@ const createChatRoom = async (user1Session, user2Session, redisClient, io, sessi
     // Start chat timeout for this room
     startChatTimeout(roomId, io, chatTimeouts);
     
+    // Track session statistics with smart matchmaking engine
+    try {
+      await matchmakingEngine.updateSessionStats(user1Session.sessionId, {
+        matchedWithSession: user2Session.sessionId,
+        chatStartTime: new Date(),
+        matchDistance: user1Session.location && user2Session.location ? 
+          calculateDistance(user1Session.location, user2Session.location) : null
+      });
+      
+      await matchmakingEngine.updateSessionStats(user2Session.sessionId, {
+        matchedWithSession: user1Session.sessionId,
+        chatStartTime: new Date(),
+        matchDistance: user1Session.location && user2Session.location ? 
+          calculateDistance(user1Session.location, user2Session.location) : null
+      });
+      
+      console.log(`📊 Smart matchmaking stats updated for ${user1Session.codename} ↔ ${user2Session.codename}`);
+    } catch (statsError) {
+      console.error('Error updating smart matchmaking stats:', statsError);
+    }
+    
   } catch (error) {
     console.error('Error creating chat room:', error);
   }
@@ -662,6 +704,25 @@ const handleChatTimeout = async (roomId, io, chatTimeouts) => {
       }
     } catch (error) {
       console.error('Error updating chat room on timeout:', error);
+    }
+    
+    // Update smart matchmaking engine with chat duration if participants exist
+    if (chatRoom && chatRoom.participants && chatRoom.participants.length >= 2) {
+      try {
+        const chatDuration = Date.now() - new Date(chatRoom.createdAt).getTime();
+        
+        for (const sessionId of chatRoom.participants) {
+          await matchmakingEngine.updateSessionStats(sessionId, {
+            chatDuration: chatDuration,
+            chatEndTime: new Date(),
+            chatEndReason: 'timeout'
+          });
+        }
+        
+        console.log(`📊 Smart matchmaking: Chat duration tracked for room ${roomId} (${Math.round(chatDuration / 60000)} minutes)`);
+      } catch (statsError) {
+        console.error('Error updating chat duration stats:', statsError);
+      }
     }
     
     // Clear the timeout
@@ -798,7 +859,7 @@ const handleUserDisconnection = async (socket, userSession, redisClient, io, cha
 };
 
 // Trigger scanning for all users currently in scanning mode
-const triggerScanningForAllUsers = async (redisClient, io, sessionsBySocketId) => {
+const triggerScanningForAllUsers = async (redisClient, io, sessionsBySocketId, matchmakingEngine) => {
   try {
     console.log(`🔄 Triggering scan for all users...`);
     
@@ -828,7 +889,7 @@ const triggerScanningForAllUsers = async (redisClient, io, sessionsBySocketId) =
       if (socket && sessionsBySocketId.has(session.socketId)) {
         // Small delay to prevent overwhelming the system
         setTimeout(async () => {
-          await findNearbyUser(socket, session, redisClient, io, sessionsBySocketId);
+          await findNearbyUser(socket, session, redisClient, io, sessionsBySocketId, matchmakingEngine);
         }, Math.random() * 1000); // Random delay 0-1 second
       }
     }
