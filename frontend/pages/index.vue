@@ -1,0 +1,267 @@
+<template>
+  <div class="min-h-screen bg-black text-green-400 font-mono overflow-hidden">
+    <!-- Matrix background effect -->
+    <MatrixBackground />
+    
+    <!-- Navigation -->
+    <nav class="relative z-20 border-b border-green-400/20 bg-black/80 backdrop-blur-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <NuxtLink to="/" class="text-xl font-bold tracking-widest hover:text-green-300 transition-colors">
+            ANON-NEARBY
+          </NuxtLink>
+          <div class="flex space-x-6">
+            <NuxtLink to="/about" class="hover:text-green-300 transition-colors text-sm">ABOUT</NuxtLink>
+            <NuxtLink to="/file-drop" class="hover:text-green-300 transition-colors text-sm">FILE DROP</NuxtLink>
+            <NuxtLink to="/chat" class="px-4 py-2 border border-green-400 hover:bg-green-400 hover:text-black transition-all text-sm">
+              ENTER CHAT
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative z-10 pt-20 pb-32 px-4">
+      <div class="max-w-7xl mx-auto text-center">
+        <div class="mb-8 inline-block">
+          <div class="w-20 h-20 mx-auto mb-6 border-2 border-green-400 rounded-full flex items-center justify-center animate-pulse">
+            <svg class="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+        </div>
+        
+        <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-wider">
+          <span class="text-green-400">ANON</span>
+          <span class="text-green-300">-</span>
+          <span class="text-green-400">NEARBY</span>
+        </h1>
+        
+        <p class="text-xl md:text-2xl text-green-400/80 mb-4 max-w-3xl mx-auto">
+          Anonymous • Ephemeral • Secure
+        </p>
+        
+        <p class="text-lg text-green-400/60 mb-12 max-w-2xl mx-auto">
+          Connect with strangers nearby. No accounts. No history. No traces.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <NuxtLink 
+            to="/chat" 
+            class="px-8 py-4 bg-green-400 text-black font-bold tracking-wider hover:bg-green-500 transition-all text-lg animate-pulse"
+          >
+            START CHATTING
+          </NuxtLink>
+          <NuxtLink 
+            to="/file-drop" 
+            class="px-8 py-4 border border-green-400 text-green-400 font-bold tracking-wider hover:bg-green-400 hover:text-black transition-all text-lg"
+          >
+            DROP FILES
+          </NuxtLink>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bento Grid Features -->
+    <section class="relative z-10 py-20 px-4">
+      <div class="max-w-7xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold text-center mb-16 tracking-wider">
+          FEATURES
+        </h2>
+        
+        <!-- Bento Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-fr">
+          <!-- Large Feature 1 - Anonymous Chat -->
+          <div class="md:col-span-2 md:row-span-2 bg-black/40 border border-green-400/30 p-8 hover:border-green-400 transition-all group backdrop-blur-sm">
+            <div class="h-full flex flex-col justify-between">
+              <div>
+                <div class="w-16 h-16 mb-6 border-2 border-green-400 rounded-lg flex items-center justify-center group-hover:animate-pulse">
+                  <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <h3 class="text-2xl font-bold mb-4 text-green-400">Anonymous Proximity Chat</h3>
+                <p class="text-green-400/70 mb-4 leading-relaxed">
+                  Connect instantly with people within 500m to 5km radius. No registration, no profiles, just pure anonymous conversation.
+                </p>
+                <ul class="space-y-2 text-green-400/60 text-sm">
+                  <li class="flex items-start">
+                    <span class="mr-2">▸</span>
+                    <span>Smart matchmaking with distance-based ranking</span>
+                  </li>
+                  <li class="flex items-start">
+                    <span class="mr-2">▸</span>
+                    <span>AI-powered content moderation for safety</span>
+                  </li>
+                  <li class="flex items-start">
+                    <span class="mr-2">▸</span>
+                    <span>Real-time typing indicators</span>
+                  </li>
+                  <li class="flex items-start">
+                    <span class="mr-2">▸</span>
+                    <span>Messages vanish when chat ends</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="mt-6">
+                <NuxtLink to="/chat" class="inline-block px-6 py-3 border border-green-400 text-green-400 hover:bg-green-400 hover:text-black transition-all font-semibold">
+                  ENTER CHAT →
+                </NuxtLink>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 2 - Encrypted File Drop -->
+          <div class="bg-black/40 border border-green-400/30 p-6 hover:border-green-400 transition-all group backdrop-blur-sm">
+            <div class="w-12 h-12 mb-4 border-2 border-green-400 rounded-lg flex items-center justify-center group-hover:animate-pulse">
+              <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3 text-green-400">Encrypted File Drop</h3>
+            <p class="text-green-400/70 text-sm leading-relaxed">
+              Drop encrypted files at your location. Share with proximity or one-time codes.
+            </p>
+          </div>
+
+          <!-- Feature 3 - Zero Persistence -->
+          <div class="bg-black/40 border border-green-400/30 p-6 hover:border-green-400 transition-all group backdrop-blur-sm">
+            <div class="w-12 h-12 mb-4 border-2 border-green-400 rounded-lg flex items-center justify-center group-hover:animate-pulse">
+              <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3 text-green-400">Zero Persistence</h3>
+            <p class="text-green-400/70 text-sm leading-relaxed">
+              Messages never touch a database. Everything lives in memory and vanishes on disconnect.
+            </p>
+          </div>
+
+          <!-- Feature 4 - Location Privacy -->
+          <div class="md:col-span-2 bg-black/40 border border-green-400/30 p-6 hover:border-green-400 transition-all group backdrop-blur-sm">
+            <div class="flex items-start space-x-4">
+              <div class="w-12 h-12 flex-shrink-0 border-2 border-green-400 rounded-lg flex items-center justify-center group-hover:animate-pulse">
+                <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-xl font-bold mb-3 text-green-400">Location Privacy First</h3>
+                <p class="text-green-400/70 text-sm leading-relaxed mb-3">
+                  Your coordinates are used only for proximity matching. No permanent storage, no tracking, no history.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="px-3 py-1 bg-green-400/10 border border-green-400/30 text-green-400 text-xs">No GPS Tracking</span>
+                  <span class="px-3 py-1 bg-green-400/10 border border-green-400/30 text-green-400 text-xs">Temporary Only</span>
+                  <span class="px-3 py-1 bg-green-400/10 border border-green-400/30 text-green-400 text-xs">Auto-Delete</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 5 - AI Moderation -->
+          <div class="bg-black/40 border border-green-400/30 p-6 hover:border-green-400 transition-all group backdrop-blur-sm">
+            <div class="w-12 h-12 mb-4 border-2 border-green-400 rounded-lg flex items-center justify-center group-hover:animate-pulse">
+              <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3 text-green-400">AI Safety</h3>
+            <p class="text-green-400/70 text-sm leading-relaxed">
+              Google Gemini AI monitors conversations for harmful content in real-time.
+            </p>
+          </div>
+
+          <!-- Feature 6 - Open Source -->
+          <div class="md:col-span-2 bg-black/40 border border-green-400/30 p-6 hover:border-green-400 transition-all group backdrop-blur-sm">
+            <div class="flex items-start space-x-4">
+              <div class="w-12 h-12 flex-shrink-0 border-2 border-green-400 rounded-lg flex items-center justify-center group-hover:animate-pulse">
+                <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-xl font-bold mb-3 text-green-400">Open Source & Transparent</h3>
+                <p class="text-green-400/70 text-sm leading-relaxed">
+                  Built with modern web technologies: Nuxt.js, Socket.IO, Redis, MongoDB. Fully open source under MIT license.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="relative z-10 py-20 px-4 border-t border-green-400/20">
+      <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="text-center">
+            <div class="text-5xl font-bold text-green-400 mb-2">0</div>
+            <div class="text-green-400/60 text-sm uppercase tracking-wider">Data Stored</div>
+          </div>
+          <div class="text-center">
+            <div class="text-5xl font-bold text-green-400 mb-2">100%</div>
+            <div class="text-green-400/60 text-sm uppercase tracking-wider">Anonymous</div>
+          </div>
+          <div class="text-center">
+            <div class="text-5xl font-bold text-green-400 mb-2">∞</div>
+            <div class="text-green-400/60 text-sm uppercase tracking-wider">Privacy</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="relative z-10 py-32 px-4">
+      <div class="max-w-4xl mx-auto text-center">
+        <h2 class="text-4xl md:text-5xl font-bold mb-6 tracking-wider text-green-400">
+          Ready to Connect?
+        </h2>
+        <p class="text-xl text-green-400/70 mb-12">
+          No sign-up required. Just enable location and start chatting.
+        </p>
+        <NuxtLink 
+          to="/chat" 
+          class="inline-block px-8 py-4 bg-green-400 text-white font-bold rounded-full hover:bg-green-500 transition-colors"
+        >
+          Get Started
+        </NuxtLink>
+      </div>
+    </section>
+
+    <!-- Privacy Modal -->
+    <div v-if="showPrivacy" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div class="bg-white p-6 rounded-lg shadow-lg w-1/2 max-w-2xl">
+        <h2 class="text-2xl font-bold mb-4">Privacy Policy</h2>
+        <p class="text-sm text-gray-600">
+          Your privacy is our top priority. We do not collect or store any personal information. Messages are encrypted and only visible to the recipient.
+        </p>
+        <button @click="showPrivacy = false" class="mt-4 px-4 py-2 bg-green-400 text-white rounded hover:bg-green-500 transition-colors">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+const showPrivacy = ref(false)
+</script>
+
+<style scoped>
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+</style>

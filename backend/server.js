@@ -8,6 +8,7 @@ import { connectRedis } from './config/redis.js';
 import { setupSocketHandlers } from './socket/socketHandlers.js';
 import userRoutes from './routes/userRoutes.js';
 import adminRoutes, { setAbuseDetector } from './routes/adminRoutes.js';
+import fileDropRoutes from './routes/fileDropRoutes.js';
 import { 
   generalLimiter, 
   strictLimiter, 
@@ -21,7 +22,7 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: [process.env.FRONTEND_URL],
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST", "DELETE"]
   }
 });
 
@@ -30,7 +31,7 @@ app.use(cors({
   origin: [process.env.FRONTEND_URL],
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increased limit for file uploads
 
 // Rate limiting middleware
 app.use('/api/', generalLimiter);
@@ -47,6 +48,7 @@ app.locals.redisClient = redisClient;
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/file-drop', fileDropRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -73,6 +75,7 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`🟩 Anon-Nearby Server running on port ${PORT}`);
   console.log(`🟩 Socket.IO enabled with CORS for localhost:3000`);
+  console.log(`🟩 File Drop API available at /api/file-drop`);
 });
 
 export { io, redisClient };
