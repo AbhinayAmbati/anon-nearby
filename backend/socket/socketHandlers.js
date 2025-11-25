@@ -329,6 +329,14 @@ export const setupSocketHandlers = (io, redisClient) => {
       }
     });
 
+    // Handle manual chat disconnection
+    socket.on('disconnect_chat', async () => {
+      console.log(`🔴 User requested chat disconnect: ${socket.id}`);
+      await handleUserDisconnection(socket, userSession, redisClient, io, chatTimeouts);
+      // Reset local session since it's deleted in cleanup
+      userSession = null;
+    });
+
     // Handle user disconnection
     socket.on('disconnect', async () => {
       console.log(`🔴 User disconnected: ${socket.id}`);

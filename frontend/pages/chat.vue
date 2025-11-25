@@ -136,7 +136,7 @@
                   @click="disconnectFromChat" 
                   class="text-red-400 hover:text-red-300 font-mono text-xs sm:text-sm flex-shrink-0 ml-2"
                 >
-                  <span class="hidden sm:inline">DISCONNECT</span>
+                  <span>DISCONNECT</span>
                 </button>
               </div>
               
