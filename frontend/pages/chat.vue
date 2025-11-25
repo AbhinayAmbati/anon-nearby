@@ -211,52 +211,7 @@
       </Transition>
     </div>
     
-    <!-- Content Moderation Dialog -->
-    <div v-if="showContentDialog" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div class="bg-black border rounded-lg max-w-md w-full" :class="{
-        'border-yellow-400/50': dialogData.type === 'warning',
-        'border-red-400/50': dialogData.type === 'error',
-        'border-green-400/50': dialogData.type === 'info'
-      }">
-        <div class="p-6">
-          <div class="flex items-center mb-4">
-            <div class="mr-3">
-              <svg v-if="dialogData.type === 'warning'" class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-              </svg>
-              <svg v-else-if="dialogData.type === 'error'" class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              <svg v-else class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-            </div>
-            <h3 class="text-lg font-mono font-bold" :class="{
-              'text-yellow-400': dialogData.type === 'warning',
-              'text-red-400': dialogData.type === 'error',
-              'text-green-400': dialogData.type === 'info'
-            }">{{ dialogData.title }}</h3>
-          </div>
-          
-          <p class="text-green-400/80 font-mono text-sm mb-6 leading-relaxed">
-            {{ dialogData.message }}
-          </p>
-          
-          <div class="flex justify-end">
-            <button 
-              @click="closeContentDialog"
-              class="px-4 py-2 bg-transparent border font-mono text-sm font-semibold transition-all duration-200" :class="{
-                'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black': dialogData.type === 'warning',
-                'border-red-400 text-red-400 hover:bg-red-400 hover:text-black': dialogData.type === 'error',
-                'border-green-400 text-green-400 hover:bg-green-400 hover:text-black': dialogData.type === 'info'
-              }"
-            >
-              GOT IT
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+
   </div>
 </template>
 
@@ -323,13 +278,7 @@ const partnerTyping = ref(false)
 const isTyping = ref(false)
 const typingTimeout = ref<NodeJS.Timeout | null>(null)
 
-// Content moderation dialog
-const showContentDialog = ref(false)
-const dialogData = ref({
-  title: '',
-  message: '',
-  type: 'warning' // 'warning' | 'error' | 'info'
-})
+
 
 // Search radius
 const selectedRadius = ref(1000)
@@ -349,11 +298,7 @@ const messages = ref<Array<{message: string, from: string, timestamp: string}>>(
 const messageInput = ref('')
 const messagesContainer = ref<HTMLElement>()
 
-// Close content moderation dialog
-const closeContentDialog = () => {
-  showContentDialog.value = false
-  dialogData.value = { title: '', message: '', type: 'warning' }
-}
+
 
 // User location storage
 const userLocation = ref<{latitude: number, longitude: number} | null>(null)
@@ -499,25 +444,7 @@ const initializeSocket = async () => {
       })
     })
 
-    socket.on('message_blocked', (data: any) => {
-      console.warn('🚫 Message blocked:', data)
-      showContentDialog.value = true
-      dialogData.value = {
-        title: data.title || 'Message Not Allowed',
-        message: data.message || 'Your message cannot be sent because it contains inappropriate content.',
-        type: 'warning'
-      }
-    })
 
-    socket.on('temporarily_muted', (data: any) => {
-      console.warn('🔇 Temporarily muted:', data)
-      showContentDialog.value = true
-      dialogData.value = {
-        title: data.title || 'Temporarily Muted',
-        message: data.message || 'You have been temporarily muted for inappropriate content.',
-        type: 'error'
-      }
-    })
 
     socket.on('partner_disconnected', (data: any) => {
       console.log('🔴 Partner disconnected')

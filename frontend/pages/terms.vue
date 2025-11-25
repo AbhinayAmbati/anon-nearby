@@ -65,7 +65,7 @@
                 <li>Anonymous, location-based proximity chat</li>
                 <li>Encrypted file drop functionality</li>
                 <li>Ephemeral messaging with zero persistence</li>
-                <li>AI-powered content moderation</li>
+
               </ul>
               <p class="font-semibold text-green-400 mt-4">
                 The Service is provided "AS IS" without warranties of any kind. We do not guarantee uninterrupted or error-free operation.
@@ -143,18 +143,7 @@
           <div class="bg-black/40 border border-green-400/30 p-6 backdrop-blur-sm">
             <h2 class="text-2xl font-bold mb-4 text-green-400">5. Content Moderation and Enforcement</h2>
             <div class="text-green-400/80 space-y-4 leading-relaxed">
-              <div>
-                <h3 class="text-lg font-bold text-green-400 mb-2">5.1 AI Moderation</h3>
-                <p>
-                  All messages are analyzed in real-time by Google Gemini AI for policy violations. The system automatically:
-                </p>
-                <ul class="list-disc list-inside space-y-2 ml-4">
-                  <li><strong>1st Offense:</strong> Warning dialog</li>
-                  <li><strong>2nd Offense:</strong> 5-minute shadow ban</li>
-                  <li><strong>3rd+ Offense:</strong> 15-minute to permanent ban</li>
-                  <li><strong>Severe Violations:</strong> Immediate permanent ban</li>
-                </ul>
-              </div>
+
 
               <div>
                 <h3 class="text-lg font-bold text-green-400 mb-2">5.2 Our Rights</h3>

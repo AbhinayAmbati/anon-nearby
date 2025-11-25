@@ -73,16 +73,7 @@
                 </ul>
               </div>
 
-              <div>
-                <h3 class="text-lg font-bold text-green-400 mb-2">2.4 Abuse Detection Data</h3>
-                <ul class="list-disc list-inside space-y-2 ml-4">
-                  <li>Anonymous hashes of session IDs for repeat offender tracking</li>
-                  <li>Content violation patterns (NOT the actual messages)</li>
-                  <li>Rate limiting counters</li>
-                  <li>All abuse data expires within 24 hours</li>
-                  <li>We do NOT store message content for moderation</li>
-                </ul>
-              </div>
+
             </div>
           </div>
 
@@ -165,7 +156,7 @@
               <p class="font-semibold text-green-400">We do NOT sell, rent, or share your data with third parties.</p>
               <p>Limited data sharing occurs only in these specific cases:</p>
               <ul class="list-disc list-inside space-y-2 ml-4">
-                <li><strong>AI Moderation:</strong> Message content is analyzed by Google Gemini AI for safety (not stored by Google)</li>
+
                 <li><strong>Infrastructure Providers:</strong> Hosting services may have access to server logs (anonymized)</li>
                 <li><strong>Legal Compliance:</strong> We may disclose data if required by law enforcement with valid legal orders</li>
               </ul>

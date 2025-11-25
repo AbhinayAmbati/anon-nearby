@@ -4,7 +4,7 @@ import { generateCodename, generateSessionId, generateRoomId, calculateDistance 
 import { inMemoryStorage } from '../utils/inMemoryStorage.js';
 import { socketRateLimiter } from '../middleware/socketRateLimiter.js';
 import SmartMatchmakingEngine from '../services/matchmakingEngine.js';
-import AbuseDetectionLayer from '../middleware/abuseDetection.js';
+
 import crypto from 'crypto';
 
 const LOCATION_RADIUS = parseInt(process.env.LOCATION_RADIUS) || 1000; // meters
@@ -27,12 +27,6 @@ export const setupSocketHandlers = (io, redisClient) => {
   // Initialize Smart Matchmaking Engine
   const matchmakingEngine = new SmartMatchmakingEngine(redisClient);
   
-  // Initialize Abuse Detection Layer with Gemini AI
-  const abuseDetector = new AbuseDetectionLayer(redisClient);
-  
-  // Make abuse detector available globally for admin routes
-  global.abuseDetectorInstance = abuseDetector;
-  
   io.on('connection', (socket) => {
     console.log(`🟩 User connected: ${socket.id}`);
     
@@ -45,9 +39,6 @@ export const setupSocketHandlers = (io, redisClient) => {
     }
     
     let userSession = null;
-    
-    // Track connection for abuse detection (will be set when user joins grid)
-    let connectionTrackingEnabled = false;
 
     // Handle user joining the grid
     socket.on('join_grid', async (data) => {
@@ -137,15 +128,6 @@ export const setupSocketHandlers = (io, redisClient) => {
         // Store session reference for this socket
         sessionsBySocketId.set(socket.id, userSession);
         
-        // Track connection for abuse detection
-        if (!connectionTrackingEnabled) {
-          await abuseDetector.trackConnectionAbuse(
-            abuseDetector.hashUserId(userSession.sessionId), 
-            'connect'
-          );
-          connectionTrackingEnabled = true;
-        }
-        
         console.log(`🟩 ${codename} joined the grid at (${latitude}, ${longitude})`);
         
         // Try to find nearby users immediately
@@ -194,60 +176,6 @@ export const setupSocketHandlers = (io, redisClient) => {
         const { message } = data;
         
         if (!message || message.trim().length === 0) {
-          return;
-        }
-
-        // 🤖 GEMINI AI ABUSE DETECTION LAYER
-        const abuseResult = await abuseDetector.detectAbuse(
-          userSession.sessionId,
-          message.trim(),
-          socket.id,
-          'chat'
-        );
-        
-        // Handle abuse detection results
-        if (abuseResult.isBlocked) {
-          // Different messages based on the action type
-          let dialogTitle = 'Message Not Allowed';
-          let dialogMessage = 'Your message cannot be sent because it contains inappropriate content. Please keep conversations respectful and friendly.';
-          
-          if (abuseResult.action === 'content_warning') {
-            dialogTitle = 'Inappropriate Content Detected';
-            dialogMessage = 'Your message contains inappropriate language or content that violates our community guidelines. Please use respectful language in your conversations.';
-          }
-          
-          socket.emit('message_blocked', {
-            type: 'inappropriate_content',
-            title: dialogTitle,
-            message: dialogMessage,
-            action: abuseResult.action,
-            reason: abuseResult.reason,
-            severity: abuseResult.severity
-          });
-          console.log(`🚫 Message blocked for ${userSession.codename}: ${abuseResult.reason} - "${message.substring(0, 30)}..."`);
-          return;
-        }
-        
-        if (abuseResult.isMuted) {
-          socket.emit('temporarily_muted', {
-            type: 'temporary_mute',
-            title: 'Temporarily Muted',
-            message: `You have been temporarily muted for ${Math.ceil(abuseResult.duration / 60)} minutes due to inappropriate content. Please follow community guidelines.`,
-            duration: abuseResult.duration,
-            reason: abuseResult.reason
-          });
-          console.log(`🔇 User muted: ${userSession.codename} for ${abuseResult.duration}s`);
-          return;
-        }
-        
-        // Shadow ban: message appears sent to user but isn't delivered
-        if (abuseResult.isShadowBanned) {
-          socket.emit('message_sent', {
-            message: message.trim(),
-            timestamp: new Date().toISOString(),
-            sender: 'you'
-          });
-          console.log(`👻 Shadow banned message from ${userSession.codename}`);
           return;
         }
 
@@ -404,14 +332,6 @@ export const setupSocketHandlers = (io, redisClient) => {
     // Handle user disconnection
     socket.on('disconnect', async () => {
       console.log(`🔴 User disconnected: ${socket.id}`);
-      
-      // Track disconnect for abuse detection
-      if (userSession && connectionTrackingEnabled) {
-        await abuseDetector.trackConnectionAbuse(
-          abuseDetector.hashUserId(userSession.sessionId),
-          'disconnect'
-        );
-      }
       
       // Clear scanning interval
       if (socket.scanningInterval) {

@@ -7,7 +7,7 @@ import { connectDatabase } from './config/database.js';
 import { connectRedis } from './config/redis.js';
 import { setupSocketHandlers } from './socket/socketHandlers.js';
 import userRoutes from './routes/userRoutes.js';
-import adminRoutes, { setAbuseDetector } from './routes/adminRoutes.js';
+
 import fileDropRoutes from './routes/fileDropRoutes.js';
 import { 
   generalLimiter, 
@@ -47,34 +47,11 @@ app.locals.redisClient = redisClient;
 
 // Routes
 app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes);
+
 app.use('/api/file-drop', fileDropRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
-// Socket.IO setup with abuse detector integration
-const socketSetup = setupSocketHandlers(io, redisClient);
-
-// Get abuse detector instance from socket setup and pass to admin routes
-// Note: This will be available after setupSocketHandlers runs
-setTimeout(() => {
-  // Access the abuse detector from the socket handlers module
-  // This is a simple way to share the instance
-  const abuseDetectorInstance = global.abuseDetectorInstance;
-  if (abuseDetectorInstance) {
-    setAbuseDetector(abuseDetectorInstance);
-    console.log('✅ Abuse detector connected to admin routes');
-  }
-}, 1000);
-
-const PORT = process.env.PORT || 3001;
-
-server.listen(PORT, () => {
-  console.log(`🟩 Anon-Nearby Server running on port ${PORT}`);
-  console.log(`🟩 Socket.IO enabled with CORS for localhost:3000`);
   console.log(`🟩 File Drop API available at /api/file-drop`);
 });
 
