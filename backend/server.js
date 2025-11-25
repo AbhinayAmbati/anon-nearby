@@ -51,7 +51,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/file-drop', fileDropRoutes);
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
