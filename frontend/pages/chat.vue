@@ -227,13 +227,15 @@ const { $socket } = useNuxtApp()
 const nearbyCount = ref<number>(0)
 const nearbyCountLoading = ref(false)
 
+const socketUrl = process.env.NUXT_PUBLIC_SOCKET_URL
+
 const fetchNearbyCount = async (latitude: number, longitude: number, radius: number = 1000) => {
   if (nearbyCountLoading.value) return
 
   nearbyCountLoading.value = true
 
   try {
-    const response = await fetch('http://localhost:3001/api/users/nearby-count', {
+    const response = await fetch(socketUrl + '/api/users/nearby-count', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

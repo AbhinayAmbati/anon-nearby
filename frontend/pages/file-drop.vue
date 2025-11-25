@@ -256,7 +256,7 @@ const fileChunksMap = new Map<string, { chunks: Map<number, Uint8Array>, totalCh
 // Setup Socket
 onMounted(() => {
   const config = useRuntimeConfig()
-  const socketUrl = config.public.socketUrl || 'http://localhost:3001'
+  const socketUrl = config.public.socketUrl
   socketService.connect(socketUrl)
   
   socketService.on('file_chunk_received', handleChunkReceived)

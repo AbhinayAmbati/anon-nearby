@@ -1,7 +1,6 @@
 // Composable for File Drop API interactions
 export const useFileDrop = () => {
-  const config = useRuntimeConfig();
-  const apiUrl = config.public.socketUrl || 'http://localhost:3001';
+  const apiUrl = process.env.NUXT_PUBLIC_SOCKET_URL;
 
   /**
    * Create a new file drop room
