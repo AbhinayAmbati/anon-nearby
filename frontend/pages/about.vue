@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen bg-black text-green-400 font-mono">
+  <div class="min-h-screen bg-black text-green-400 font-mono flex flex-col">
     <!-- Matrix background effect -->
     <MatrixBackground />
     
     <!-- Navigation -->
 
 
-    <div class="relative z-10">
+    <div class="relative z-10 flex-grow">
       <!-- Hero Section -->
       <section class="py-20 px-4">
         <div class="max-w-4xl mx-auto text-center">

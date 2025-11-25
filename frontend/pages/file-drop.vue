@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen bg-black text-green-400 font-mono">
+  <div class="min-h-screen bg-black text-green-400 font-mono flex flex-col">
     <MatrixBackground />
     
     <!-- Navigation -->
 
 
-    <div class="relative z-10 container mx-auto px-4 py-8">
+    <div class="relative z-10 container mx-auto px-4 py-8 flex-grow">
       <!-- Header -->
       <div class="text-center mb-12">
         <h1 class="text-4xl font-bold mb-4 tracking-wider">EPHEMERAL FILE RELAY</h1>

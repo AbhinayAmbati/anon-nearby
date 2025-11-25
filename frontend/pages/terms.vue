@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen bg-black text-green-400 font-mono">
+  <div class="min-h-screen bg-black text-green-400 font-mono flex flex-col">
     <!-- Matrix background effect -->
     <MatrixBackground />
     
     <!-- Navigation -->
 
 
-    <div class="relative z-10">
+    <div class="relative z-10 flex-grow">
       <!-- Header -->
       <section class="py-12 px-4 border-b border-green-400/20">
         <div class="max-w-4xl mx-auto">

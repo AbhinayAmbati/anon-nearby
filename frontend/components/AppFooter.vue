@@ -1,5 +1,5 @@
 <template>
-  <footer class="relative z-10 border-t border-green-400/20 bg-black/80 backdrop-blur-sm px-4 py-8">
+  <footer class="relative z-10 border-t border-green-400/20 bg-black/80 backdrop-blur-sm px-4 py-8 mt-auto">
     <div class="max-w-7xl mx-auto text-center">
       <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6 text-sm">
         <NuxtLink to="/privacy" class="text-green-400 hover:text-green-300">Privacy Policy</NuxtLink>

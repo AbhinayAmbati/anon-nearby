@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-black text-green-400 font-mono overflow-hidden">
+  <div class="min-h-screen bg-black text-green-400 font-mono overflow-hidden flex flex-col">
     <!-- Matrix background effect -->
     <MatrixBackground />
     
