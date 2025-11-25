@@ -21,6 +21,9 @@ export const setupSocketHandlers = (io, redisClient) => {
   // Store activity timeouts for chat rooms
   const chatTimeouts = new Map();
   
+  // Track file drop rooms: roomId -> { creatorId: string, createdAt: Date }
+  const fileDropRooms = new Map();
+  
   // Initialize Smart Matchmaking Engine
   const matchmakingEngine = new SmartMatchmakingEngine(redisClient);
   
@@ -415,6 +418,11 @@ export const setupSocketHandlers = (io, redisClient) => {
         clearInterval(socket.scanningInterval);
       }
       
+      // Handle file drop room cleanup if creator
+      if (socket.createdFileDropRoom) {
+        handleFileDropLeave(socket, socket.createdFileDropRoom, io, fileDropRooms);
+      }
+      
       sessionsBySocketId.delete(socket.id);
       await handleUserDisconnection(socket, userSession, redisClient, io, chatTimeouts);
     });
@@ -428,6 +436,11 @@ export const setupSocketHandlers = (io, redisClient) => {
         clearInterval(socket.scanningInterval);
       }
       
+      // Handle file drop room cleanup if creator
+      if (socket.createdFileDropRoom) {
+        handleFileDropLeave(socket, socket.createdFileDropRoom, io, fileDropRooms);
+      }
+      
       sessionsBySocketId.delete(socket.id);
       await handleUserDisconnection(socket, userSession, redisClient, io, chatTimeouts);
     });
@@ -439,7 +452,18 @@ export const setupSocketHandlers = (io, redisClient) => {
       if (!roomId) return;
       
       socket.join(`file_drop_${roomId}`);
-      console.log(`📂 Socket ${socket.id} joined file drop room ${roomId}`);
+      
+      // If room doesn't exist, this user is the creator
+      if (!fileDropRooms.has(roomId)) {
+        fileDropRooms.set(roomId, {
+          creatorId: socket.id,
+          createdAt: new Date()
+        });
+        socket.createdFileDropRoom = roomId;
+        console.log(`📂 Socket ${socket.id} created file drop room ${roomId}`);
+      } else {
+        console.log(`📂 Socket ${socket.id} joined file drop room ${roomId}`);
+      }
       
       // Notify others in the room
       socket.to(`file_drop_${roomId}`).emit('user_joined_drop_room', {
@@ -451,8 +475,7 @@ export const setupSocketHandlers = (io, redisClient) => {
       const { roomId } = data;
       if (!roomId) return;
       
-      socket.leave(`file_drop_${roomId}`);
-      console.log(`📂 Socket ${socket.id} left file drop room ${roomId}`);
+      handleFileDropLeave(socket, roomId, io, fileDropRooms);
     });
 
     socket.on('file_chunk', (data) => {
@@ -1029,5 +1052,39 @@ const triggerScanningForAllUsers = async (redisClient, io, sessionsBySocketId, m
     
   } catch (error) {
     console.error('Error triggering scans:', error);
+  }
+};
+
+// Helper to handle file drop room leaving/cleanup
+const handleFileDropLeave = (socket, roomId, io, fileDropRooms) => {
+  const room = fileDropRooms.get(roomId);
+  
+  if (room && room.creatorId === socket.id) {
+    // Creator is leaving, close the room
+    console.log(`🛑 Creator ${socket.id} left file drop room ${roomId}. Closing room.`);
+    
+    // Notify all users that room is closed
+    io.to(`file_drop_${roomId}`).emit('file_drop_room_closed', {
+      reason: 'Creator left the room'
+    });
+    
+    // Make everyone leave
+    io.in(`file_drop_${roomId}`).socketsLeave(`file_drop_${roomId}`);
+    
+    // Delete room tracking
+    fileDropRooms.delete(roomId);
+    
+    if (socket.createdFileDropRoom === roomId) {
+      delete socket.createdFileDropRoom;
+    }
+  } else {
+    // Regular user leaving
+    socket.leave(`file_drop_${roomId}`);
+    console.log(`📂 Socket ${socket.id} left file drop room ${roomId}`);
+    
+    // Notify others
+    socket.to(`file_drop_${roomId}`).emit('user_left_drop_room', {
+      socketId: socket.id
+    });
   }
 };

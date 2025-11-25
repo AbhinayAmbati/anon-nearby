@@ -275,15 +275,28 @@ onMounted(() => {
   socketService.on('user_joined_drop_room', () => {
     // Optional: Notify user
   })
+  socketService.on('file_drop_room_closed', handleRoomClosed)
+  socketService.on('user_left_drop_room', handleUserLeft)
 })
 
 onUnmounted(() => {
   socketService.off('file_chunk_received')
   socketService.off('user_joined_drop_room')
+  socketService.off('file_drop_room_closed')
+  socketService.off('user_left_drop_room')
   if (roomId.value) {
     socketService.leaveFileDropRoom(roomId.value)
   }
 })
+
+const handleRoomClosed = (data: any) => {
+  alert(`Room closed: ${data.reason}`)
+  reset()
+}
+
+const handleUserLeft = (data: any) => {
+  console.log('User left:', data.socketId)
+}
 
 const reset = () => {
   if (roomId.value) {

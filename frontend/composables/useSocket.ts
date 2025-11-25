@@ -77,6 +77,7 @@ class SocketService {
       this.emit('partner_disconnected', data)
     })
 
+
     // File Drop Events
     this.socket.on('user_joined_drop_room', (data: any) => {
       console.log('👤 User joined drop room:', data.socketId)
@@ -89,6 +90,16 @@ class SocketService {
         console.log(`📂 File chunk received: ${data.fileName} (${data.chunkIndex + 1}/${data.totalChunks})`)
       }
       this.emit('file_chunk_received', data)
+    })
+
+    this.socket.on('file_drop_room_closed', (data: any) => {
+      console.log('🛑 File drop room closed:', data.reason)
+      this.emit('file_drop_room_closed', data)
+    })
+
+    this.socket.on('user_left_drop_room', (data: any) => {
+      console.log('👤 User left drop room:', data.socketId)
+      this.emit('user_left_drop_room', data)
     })
 
     this.socket.on('error', (error: any) => {
