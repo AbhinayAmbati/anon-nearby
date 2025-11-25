@@ -114,6 +114,51 @@
         </div>
       </section>
 
+      <!-- New Feature: File Drop -->
+      <section class="py-16 px-4 border-t border-green-400/20">
+        <div class="max-w-4xl mx-auto">
+          <h2 class="text-3xl font-bold mb-12 text-center">NEW: EPHEMERAL FILE RELAY</h2>
+          <div class="grid md:grid-cols-2 gap-8 items-center">
+            <div class="space-y-6 text-green-400/80 leading-relaxed">
+              <p class="text-lg">
+                We've expanded beyond chat with <span class="text-green-400 font-semibold">File Drop</span>, a secure way to share files without leaving a trace.
+              </p>
+              <ul class="space-y-4">
+                <li class="flex items-start">
+                  <span class="mr-3 text-xl">🔒</span>
+                  <span><strong>End-to-End Encryption:</strong> Files are encrypted in your browser using AES-256-GCM before they ever touch the network.</span>
+                </li>
+                <li class="flex items-start">
+                  <span class="mr-3 text-xl">⚡</span>
+                  <span><strong>Serverless Relay:</strong> We stream your encrypted data directly to the recipient. We never store your files, not even for a second.</span>
+                </li>
+                <li class="flex items-start">
+                  <span class="mr-3 text-xl">📍</span>
+                  <span><strong>Location or Code:</strong> Share with people nearby using geolocation or create a private room with a unique code.</span>
+                </li>
+              </ul>
+            </div>
+            <div class="bg-black/40 border border-green-400/30 p-8 backdrop-blur-sm text-center">
+              <div class="w-24 h-24 mx-auto mb-6 border-2 border-green-400 rounded-lg flex items-center justify-center">
+                <svg class="w-12 h-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold mb-4 text-green-400">Ready to Share?</h3>
+              <p class="text-green-400/60 mb-6">
+                Experience secure, anonymous file transfer today.
+              </p>
+              <NuxtLink 
+                to="/file-drop" 
+                class="inline-block px-8 py-3 border border-green-400 text-green-400 hover:bg-green-400 hover:text-black transition-all font-bold"
+              >
+                TRY FILE DROP
+              </NuxtLink>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Technical Architecture -->
       <section class="py-16 px-4 border-t border-green-400/20">
         <div class="max-w-4xl mx-auto">
@@ -144,6 +189,10 @@
                 <li class="flex items-start">
                   <span class="mr-2">▸</span>
                   <span><strong class="text-green-400">HTML5 Geolocation</strong> - Location services</span>
+                </li>
+                <li class="flex items-start">
+                  <span class="mr-2">▸</span>
+                  <span><strong class="text-green-400">Web Crypto API</strong> - Client-side encryption</span>
                 </li>
               </ul>
             </div>
