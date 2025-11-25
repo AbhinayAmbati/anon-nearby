@@ -4,22 +4,7 @@
     <MatrixBackground />
     
     <!-- Navigation -->
-    <nav class="relative z-20 border-b border-green-400/20 bg-black/80 backdrop-blur-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <NuxtLink to="/" class="text-xl font-bold tracking-widest hover:text-green-300 transition-colors">
-            ANON-NEARBY
-          </NuxtLink>
-          <div class="flex space-x-6">
-            <NuxtLink to="/about" class="hover:text-green-300 transition-colors text-sm">ABOUT</NuxtLink>
-            <NuxtLink to="/file-drop" class="hover:text-green-300 transition-colors text-sm">FILE DROP</NuxtLink>
-            <NuxtLink to="/chat" class="px-4 py-2 border border-green-400 hover:bg-green-400 hover:text-black transition-all text-sm">
-              ENTER CHAT
-            </NuxtLink>
-          </div>
-        </div>
-      </div>
-    </nav>
+
 
     <!-- Hero Section -->
     <section class="relative z-10 pt-20 pb-32 px-4">
@@ -231,6 +216,9 @@
         </NuxtLink>
       </div>
     </section>
+
+    <!-- Footer -->
+    <AppFooter />
 
     <!-- Privacy Modal -->
     <div v-if="showPrivacy" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">

@@ -4,22 +4,7 @@
     <MatrixBackground />
     
     <!-- Navigation -->
-    <nav class="relative z-20 border-b border-green-400/20 bg-black/80 backdrop-blur-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <NuxtLink to="/" class="text-xl font-bold tracking-widest hover:text-green-300 transition-colors">
-            ANON-NEARBY
-          </NuxtLink>
-          <div class="flex space-x-6">
-            <NuxtLink to="/about" class="hover:text-green-300 transition-colors text-sm">ABOUT</NuxtLink>
-            <NuxtLink to="/file-drop" class="hover:text-green-300 transition-colors text-sm">FILE DROP</NuxtLink>
-            <NuxtLink to="/chat" class="px-4 py-2 border border-green-400 hover:bg-green-400 hover:text-black transition-all text-sm">
-              ENTER CHAT
-            </NuxtLink>
-          </div>
-        </div>
-      </div>
-    </nav>
+
 
     <div class="relative z-10">
       <!-- Header -->
@@ -441,18 +426,8 @@
     </div>
 
     <!-- Footer -->
-    <footer class="relative z-10 border-t border-green-400/20 bg-black/80 backdrop-blur-sm px-4 py-8">
-      <div class="max-w-7xl mx-auto text-center">
-        <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6 text-sm">
-          <NuxtLink to="/privacy" class="text-green-400 hover:text-green-300">Privacy Policy</NuxtLink>
-          <NuxtLink to="/terms" class="text-green-400 hover:text-green-300">Terms & Conditions</NuxtLink>
-          <NuxtLink to="/about" class="text-green-400/60 hover:text-green-400">About</NuxtLink>
-        </div>
-        <div class="text-green-400/60 text-sm mt-4">
-          © 2025 ANON-NEARBY • MIT License • Use Responsibly • 18+ Only
-        </div>
-      </div>
-    </footer>
+    <!-- Footer -->
+    <AppFooter />
   </div>
 </template>
 

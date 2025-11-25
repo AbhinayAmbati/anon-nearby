@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="min-h-screen bg-black text-green-400 font-mono">
     <!-- Debug info -->
-    <div class="fixed top-2 left-2 text-xs bg-black bg-opacity-50 p-1 sm:p-2 rounded z-50 text-green-400 font-mono">
+    <div class="fixed top-20 left-2 text-xs bg-black bg-opacity-50 p-1 sm:p-2 rounded z-40 text-green-400 font-mono pointer-events-none">
       <div class="hidden sm:block">
         State: {{ appState }}<br>
         Codename: {{ userCodename }}<br>
@@ -14,16 +14,6 @@
     
     <!-- Matrix background effect -->
     <MatrixBackground />
-    
-    <!-- Back to Home Button -->
-    <div class="fixed top-2 right-2 z-50">
-      <NuxtLink 
-        to="/" 
-        class="px-4 py-2 bg-black/80 border border-green-400/30 text-green-400 hover:bg-green-400 hover:text-black transition-all text-sm backdrop-blur-sm"
-      >
-        ← HOME
-      </NuxtLink>
-    </div>
     
     <!-- Main application states -->
     <div class="relative z-10 hw-accelerated transition-state">
@@ -43,185 +33,191 @@
         <div 
           v-else-if="appState === 'permission'"
           key="permission"
-          class="flex items-center justify-center min-h-screen p-4 sm:p-8"
+          class="flex flex-col min-h-screen"
         >
-        <div class="text-center max-w-sm sm:max-w-md w-full">
-          <div class="mb-6 sm:mb-8">
-            <h1 class="text-xl sm:text-2xl lg:text-3xl font-mono font-bold text-green-400 mb-3 sm:mb-4 tracking-widest">
-              ANON-NEARBY CHAT
-            </h1>
-            <div class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 border-2 border-green-400 rounded-full flex items-center justify-center">
-              <svg class="w-6 h-6 sm:w-8 sm:h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-          </div>
-          
-          <div class="space-y-3 sm:space-y-4 text-sm sm:text-base px-4">
-            <p class="text-green-400/80">
-              Connect anonymously with people near you.
-            </p>
-            <p class="text-green-400/60 text-xs sm:text-sm">
-              No accounts. No history. No traces.
-            </p>
-            
-            <!-- Nearby nodes count -->
-            <div v-if="showNearbyCount" class="flex items-center justify-center space-x-2 text-green-400/60 text-xs sm:text-sm nearby-count-appear">
-              <div class="w-2 h-2 bg-green-400 rounded-full connection-indicator"></div>
-              <span v-if="nearbyCountLoading" class="loading-dots">
-                Detecting nearby nodes<span>.</span><span>.</span><span>.</span>
-              </span>
-              <span v-else class="transition-state">
-                Active nodes nearby: <strong class="text-green-400">{{ displayNearbyCount }}</strong>
-              </span>
-            </div>
-          </div>
-          
-          <!-- Location permission button -->
-          <button
-            v-if="!userLocation"
-            @click="requestLocationPermission"
-            class="mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 w-full sm:w-auto bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold tracking-wider text-sm sm:text-base"
-          >
-            ENABLE LOCATION
-          </button>
-          
-          <!-- Enter grid button -->
-          <button
-            v-else
-            @click="enterGrid"
-            class="mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 w-full sm:w-auto bg-green-400 text-gray-900 border border-green-400 hover:bg-green-500 hover:border-green-500 transition-all duration-200 font-mono font-bold tracking-wider text-sm sm:text-base animate-pulse"
-          >
-            ENTER THE GRID
-          </button>
-          
-          <div v-if="error" class="mt-3 sm:mt-4 text-red-400 text-xs sm:text-sm px-2">
-            {{ error }}
-          </div>
-        </div>
-      </div>
-      
-      <!-- Scanning State -->
-      <div v-else-if="appState === 'scanning'" key="scanning" class="flex items-center justify-center min-h-screen p-4 sm:p-8">
-        <div class="text-center">
-          <h2 class="text-lg sm:text-xl font-mono font-bold text-green-400 mb-3 sm:mb-4 px-4">{{ userCodename }}</h2>
-          <p class="text-green-400/70 mb-4 sm:mb-6 text-sm sm:text-base px-4">Scanning for nearby nodes...</p>
-          
-          <!-- Search Radius Selector -->
-          <div class="mb-6 sm:mb-8 relative z-20">
-            <p class="text-green-400/60 text-xs sm:text-sm mb-3">Search Radius</p>
-            <div class="flex justify-center space-x-2 sm:space-x-4 px-4 relative z-20">
-              <button
-                v-for="radius in radiusOptions"
-                :key="radius.value"
-                @click="updateSearchRadius(radius.value)"
-                :class="[
-                  'px-3 py-2 text-xs sm:text-sm font-mono rounded border radius-btn relative z-20',
-                  selectedRadius === radius.value
-                    ? 'bg-green-400 text-black border-green-400 font-bold'
-                    : 'bg-transparent text-green-400 border-green-400/30 hover:border-green-400/60'
-                ]"
-              >
-                {{ radius.label }}
-              </button>
-            </div>
-          </div>
-          
-          <div class="w-24 h-24 sm:w-32 sm:h-32 mx-auto relative z-10">
-            <!-- Moving circles animation -->
-            <div class="absolute inset-0 border-2 border-green-400/60 rounded-full ripple-animation z-10"></div>
-            <div class="absolute inset-0 border-2 border-green-400/40 rounded-full ripple-animation z-10" style="animation-delay: 1s;"></div>
-            <div class="absolute inset-0 border-2 border-green-400/20 rounded-full ripple-animation z-10" style="animation-delay: 2s;"></div>
-            <!-- Center dot -->
-            <div class="absolute top-1/2 left-1/2 w-3 h-3 bg-green-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse z-10"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Chat State -->
-      <div v-else-if="appState === 'chatting'" key="chatting" class="flex flex-col h-screen bg-black">
-        <div class="flex-1 flex flex-col max-w-sm sm:max-w-2xl lg:max-w-4xl mx-auto w-full p-6 sm:p-4">
-          <div class="bg-black rounded-lg border border-green-400/30 overflow-hidden flex flex-col h-full">
-            <!-- Chat header -->
-            <div class="bg-black px-3 sm:px-4 py-2 sm:py-3 border-b border-green-400/30 flex justify-between items-center flex-shrink-0">
-              <div class="flex items-center space-x-2">
-                <div class="w-2 h-2 bg-green-400 rounded-full connection-indicator"></div>
-                <span class="text-green-400 font-mono text-sm sm:text-base truncate">Connected to {{ partnerCodename }}</span>
-              </div>
-              <button 
-                @click="disconnectFromChat" 
-                class="text-red-400 hover:text-red-300 font-mono text-xs sm:text-sm flex-shrink-0 ml-2"
-              >
-                <span class="hidden sm:inline">DISCONNECT</span>
-              </button>
-            </div>
-            
-            <!-- Messages area -->
-            <div class="flex-1 p-3 sm:p-4 overflow-y-auto bg-black" ref="messagesContainer">
-              <div v-if="messages.length === 0" class="text-center text-green-400/60 py-4 sm:py-8 text-sm sm:text-base">
-                Start your anonymous conversation...
-              </div>
-              <div v-for="(message, index) in messages" :key="index" class="mb-3 sm:mb-4 message-bubble">
-                <div class="text-xs text-green-400/60 mb-1">{{ message.from }}</div>
-                <div class="text-green-400 font-mono text-sm sm:text-base break-words">{{ message.message }}</div>
-              </div>
-              
-              <!-- Typing indicator -->
-              <div v-if="partnerTyping" class="mb-3 sm:mb-4 flex flex-col">
-                <label>{{ partnerCodename }}</label>
-                <div class="flex space-x-2 flex-col">  
-                  <span class="text-green-400/80 text-sm">typing<span class="typing-dots">...</span></span>
+          <div class="flex-grow flex items-center justify-center p-4 sm:p-8">
+            <div class="text-center max-w-sm sm:max-w-md w-full">
+              <div class="mb-6 sm:mb-8">
+                <h1 class="text-xl sm:text-2xl lg:text-3xl font-mono font-bold text-green-400 mb-3 sm:mb-4 tracking-widest">
+                  ANON-NEARBY CHAT
+                </h1>
+                <div class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 border-2 border-green-400 rounded-full flex items-center justify-center">
+                  <svg class="w-6 h-6 sm:w-8 sm:h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
                 </div>
               </div>
+              
+              <div class="space-y-3 sm:space-y-4 text-sm sm:text-base px-4">
+                <p class="text-green-400/80">
+                  Connect anonymously with people near you.
+                </p>
+                <p class="text-green-400/60 text-xs sm:text-sm">
+                  No accounts. No history. No traces.
+                </p>
+                
+                <!-- Nearby nodes count -->
+                <div v-if="showNearbyCount" class="flex items-center justify-center space-x-2 text-green-400/60 text-xs sm:text-sm nearby-count-appear">
+                  <div class="w-2 h-2 bg-green-400 rounded-full connection-indicator"></div>
+                  <span v-if="nearbyCountLoading" class="loading-dots">
+                    Detecting nearby nodes<span>.</span><span>.</span><span>.</span>
+                  </span>
+                  <span v-else class="transition-state">
+                    Active nodes nearby: <strong class="text-green-400">{{ displayNearbyCount }}</strong>
+                  </span>
+                </div>
+              </div>
+              
+              <!-- Location permission button -->
+              <button
+                v-if="!userLocation"
+                @click="requestLocationPermission"
+                class="mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 w-full sm:w-auto bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold tracking-wider text-sm sm:text-base"
+              >
+                ENABLE LOCATION
+              </button>
+              
+              <!-- Enter grid button -->
+              <button
+                v-else
+                @click="enterGrid"
+                class="mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 w-full sm:w-auto bg-green-400 text-gray-900 border border-green-400 hover:bg-green-500 hover:border-green-500 transition-all duration-200 font-mono font-bold tracking-wider text-sm sm:text-base animate-pulse"
+              >
+                ENTER THE GRID
+              </button>
+              
+              <div v-if="error" class="mt-3 sm:mt-4 text-red-400 text-xs sm:text-sm px-2">
+                {{ error }}
+              </div>
+            </div>
+          </div>
+          <AppFooter />
+        </div>
+        
+        <!-- Scanning State -->
+        <div v-else-if="appState === 'scanning'" key="scanning" class="flex items-center justify-center min-h-screen p-4 sm:p-8">
+          <div class="text-center">
+            <h2 class="text-lg sm:text-xl font-mono font-bold text-green-400 mb-3 sm:mb-4 px-4">{{ userCodename }}</h2>
+            <p class="text-green-400/70 mb-4 sm:mb-6 text-sm sm:text-base px-4">Scanning for nearby nodes...</p>
+            
+            <!-- Search Radius Selector -->
+            <div class="mb-6 sm:mb-8 relative z-20">
+              <p class="text-green-400/60 text-xs sm:text-sm mb-3">Search Radius</p>
+              <div class="flex justify-center space-x-2 sm:space-x-4 px-4 relative z-20">
+                <button
+                  v-for="radius in radiusOptions"
+                  :key="radius.value"
+                  @click="updateSearchRadius(radius.value)"
+                  :class="[
+                    'px-3 py-2 text-xs sm:text-sm font-mono rounded border radius-btn relative z-20',
+                    selectedRadius === radius.value
+                      ? 'bg-green-400 text-black border-green-400 font-bold'
+                      : 'bg-transparent text-green-400 border-green-400/30 hover:border-green-400/60'
+                  ]"
+                >
+                  {{ radius.label }}
+                </button>
+              </div>
             </div>
             
-            <!-- Input area -->
-            <div class="bg-black p-3 sm:px-4 sm:py-3 border-t border-green-400/30 flex-shrink-0">
-              <form @submit.prevent="sendChatMessage" class="flex space-x-2">
-                <input
-                  v-model="messageInput"
-                  type="text"
-                  placeholder="Type your message..."
-                  class="flex-1 bg-black border border-green-400/30 text-green-400 px-2 sm:px-3 py-2 rounded font-mono focus:outline-none focus:border-green-400 text-sm sm:text-base"
-                  :disabled="!connected"
-                  @input="handleTyping"
-                  @focus="handleTypingStart"
-                  @blur="handleTypingStop"
-                />
-                <button 
-                  type="submit" 
-                  class="px-3 sm:px-4 py-2 bg-green-400/20 text-green-400 border border-green-400/30 rounded hover:bg-green-400/30 font-mono text-xs sm:text-sm flex-shrink-0"
-                  :disabled="!messageInput.trim() || !connected"
-                >
-                  SEND
-                </button>
-              </form>
+            <div class="w-24 h-24 sm:w-32 sm:h-32 mx-auto relative z-10">
+              <!-- Moving circles animation -->
+              <div class="absolute inset-0 border-2 border-green-400/60 rounded-full ripple-animation z-10"></div>
+              <div class="absolute inset-0 border-2 border-green-400/40 rounded-full ripple-animation z-10" style="animation-delay: 1s;"></div>
+              <div class="absolute inset-0 border-2 border-green-400/20 rounded-full ripple-animation z-10" style="animation-delay: 2s;"></div>
+              <!-- Center dot -->
+              <div class="absolute top-1/2 left-1/2 w-3 h-3 bg-green-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse z-10"></div>
             </div>
           </div>
         </div>
-        <!-- Chat footer spacer to account for global footer -->
-        <div class="h-8 sm:h-10 flex-shrink-0"></div>
-      </div>      <!-- Disconnected State -->
-      <div
-        v-else-if="appState === 'disconnected'"
-        class="flex items-center justify-center min-h-screen p-4 sm:p-8"
-      >
-        <div class="text-center max-w-sm sm:max-w-md w-full">
-          <h2 class="text-lg sm:text-xl font-mono font-bold text-green-400 mb-3 sm:mb-4">
-            CONNECTION TERMINATED
-          </h2>
-          <p class="text-green-400/70 mb-4 sm:mb-6 text-sm sm:text-base px-4">
-            Your chat partner has disconnected.
-          </p>
-          <button
-            @click="returnToScanning"
-            class="px-4 sm:px-6 py-2 sm:py-3 w-full sm:w-auto bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold tracking-wider text-sm sm:text-base"
-          >
-            SCAN AGAIN
-          </button>
+
+        <!-- Chat State -->
+        <div v-else-if="appState === 'chatting'" key="chatting" class="flex flex-col h-screen bg-black">
+          <div class="flex-1 flex flex-col max-w-sm sm:max-w-2xl lg:max-w-4xl mx-auto w-full p-6 sm:p-4">
+            <div class="bg-black rounded-lg border border-green-400/30 overflow-hidden flex flex-col h-full">
+              <!-- Chat header -->
+              <div class="bg-black px-3 sm:px-4 py-2 sm:py-3 border-b border-green-400/30 flex justify-between items-center flex-shrink-0">
+                <div class="flex items-center space-x-2">
+                  <div class="w-2 h-2 bg-green-400 rounded-full connection-indicator"></div>
+                  <span class="text-green-400 font-mono text-sm sm:text-base truncate">Connected to {{ partnerCodename }}</span>
+                </div>
+                <button 
+                  @click="disconnectFromChat" 
+                  class="text-red-400 hover:text-red-300 font-mono text-xs sm:text-sm flex-shrink-0 ml-2"
+                >
+                  <span class="hidden sm:inline">DISCONNECT</span>
+                </button>
+              </div>
+              
+              <!-- Messages area -->
+              <div class="flex-1 p-3 sm:p-4 overflow-y-auto bg-black" ref="messagesContainer">
+                <div v-if="messages.length === 0" class="text-center text-green-400/60 py-4 sm:py-8 text-sm sm:text-base">
+                  Start your anonymous conversation...
+                </div>
+                <div v-for="(message, index) in messages" :key="index" class="mb-3 sm:mb-4 message-bubble">
+                  <div class="text-xs text-green-400/60 mb-1">{{ message.from }}</div>
+                  <div class="text-green-400 font-mono text-sm sm:text-base break-words">{{ message.message }}</div>
+                </div>
+                
+                <!-- Typing indicator -->
+                <div v-if="partnerTyping" class="mb-3 sm:mb-4 flex flex-col">
+                  <label>{{ partnerCodename }}</label>
+                  <div class="flex space-x-2 flex-col">  
+                    <span class="text-green-400/80 text-sm">typing<span class="typing-dots">...</span></span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Input area -->
+              <div class="bg-black p-3 sm:px-4 sm:py-3 border-t border-green-400/30 flex-shrink-0">
+                <form @submit.prevent="sendChatMessage" class="flex space-x-2">
+                  <input
+                    v-model="messageInput"
+                    type="text"
+                    placeholder="Type your message..."
+                    class="flex-1 bg-black border border-green-400/30 text-green-400 px-2 sm:px-3 py-2 rounded font-mono focus:outline-none focus:border-green-400 text-sm sm:text-base"
+                    :disabled="!connected"
+                    @input="handleTyping"
+                    @focus="handleTypingStart"
+                    @blur="handleTypingStop"
+                  />
+                  <button 
+                    type="submit" 
+                    class="px-3 sm:px-4 py-2 bg-green-400/20 text-green-400 border border-green-400/30 rounded hover:bg-green-400/30 font-mono text-xs sm:text-sm flex-shrink-0"
+                    :disabled="!messageInput.trim() || !connected"
+                  >
+                    SEND
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+          <!-- Chat footer spacer to account for global footer -->
+          <div class="h-8 sm:h-10 flex-shrink-0"></div>
+        </div>      <!-- Disconnected State -->
+        <div
+          v-else-if="appState === 'disconnected'"
+          class="flex flex-col min-h-screen"
+        >
+          <div class="flex-grow flex items-center justify-center p-4 sm:p-8">
+            <div class="text-center max-w-sm sm:max-w-md w-full">
+              <h2 class="text-lg sm:text-xl font-mono font-bold text-green-400 mb-3 sm:mb-4">
+                CONNECTION TERMINATED
+              </h2>
+              <p class="text-green-400/70 mb-4 sm:mb-6 text-sm sm:text-base px-4">
+                Your chat partner has disconnected.
+              </p>
+              <button
+                @click="returnToScanning"
+                class="px-4 sm:px-6 py-2 sm:py-3 w-full sm:w-auto bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold tracking-wider text-sm sm:text-base"
+              >
+                SCAN AGAIN
+              </button>
+            </div>
+          </div>
+          <AppFooter />
         </div>
-      </div>
       </Transition>
     </div>
     
