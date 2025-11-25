@@ -220,8 +220,7 @@
     <!-- Footer -->
     <AppFooter />
 
-    <!-- Terms & Privacy Modal -->
-    <TermsModal />
+
   </div>
 </template>
 

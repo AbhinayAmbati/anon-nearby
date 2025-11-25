@@ -51,13 +51,30 @@
 
 <script setup lang="ts">
 const isOpen = ref(true)
+let checkInterval: NodeJS.Timeout | null = null
 
-// Check if user has already accepted
-onMounted(() => {
+const checkTerms = () => {
   const accepted = localStorage.getItem('terms_accepted')
   if (accepted) {
     isOpen.value = false
+  } else {
+    isOpen.value = true
   }
+}
+
+// Check if user has already accepted and start polling
+onMounted(() => {
+  checkTerms()
+  // Check every second to handle manual storage clearing
+  checkInterval = setInterval(checkTerms, 1000)
+  
+  // Also listen for storage events from other tabs
+  window.addEventListener('storage', checkTerms)
+})
+
+onUnmounted(() => {
+  if (checkInterval) clearInterval(checkInterval)
+  window.removeEventListener('storage', checkTerms)
 })
 
 const accept = () => {
@@ -67,6 +84,6 @@ const accept = () => {
 
 const exit = () => {
   // Redirect to Google or close tab
-  window.location.href = 'https://google.com'
+  window.history.back();
 }
 </script>

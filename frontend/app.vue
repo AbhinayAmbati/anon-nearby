@@ -2,6 +2,7 @@
   <div>
     <AppNavbar />
     <NuxtPage />
+    <TermsModal />
   </div>
 </template>
 
