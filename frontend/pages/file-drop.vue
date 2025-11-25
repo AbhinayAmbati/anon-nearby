@@ -17,7 +17,7 @@
       </div>
 
       <!-- Mode Selection -->
-      <div v-if="!mode" class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      <div v-if="!mode" class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         <!-- Send Mode -->
         <button 
           @click="mode = 'send'"
@@ -143,7 +143,7 @@
           Back / Leave Room
         </button>
 
-        <div class="grid md:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           <!-- Send Panel -->
           <div class="bg-black/40 border border-green-400/30 p-8 backdrop-blur-sm">
             <h2 class="text-2xl font-bold mb-6 text-green-400">Send File</h2>

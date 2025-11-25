@@ -1,16 +1,6 @@
 <template>
   <div id="app" class="min-h-screen bg-black text-green-400 font-mono">
-    <!-- Debug info -->
-    <div class="fixed top-20 left-2 text-xs bg-black bg-opacity-50 p-1 sm:p-2 rounded z-40 text-green-400 font-mono pointer-events-none">
-      <div class="hidden sm:block">
-        State: {{ appState }}<br>
-        Codename: {{ userCodename }}<br>
-        Socket: {{ socketConnected ? 'Connected' : 'Disconnected' }}
-      </div>
-      <div class="sm:hidden">
-        {{ appState.charAt(0).toUpperCase() + appState.slice(1) }}
-      </div>
-    </div>
+
     
     <!-- Matrix background effect -->
     <MatrixBackground />
@@ -134,7 +124,7 @@
 
         <!-- Chat State -->
         <div v-else-if="appState === 'chatting'" key="chatting" class="flex flex-col h-screen bg-black">
-          <div class="flex-1 flex flex-col max-w-sm sm:max-w-2xl lg:max-w-4xl mx-auto w-full p-6 sm:p-4">
+          <div class="flex-1 flex flex-col w-full max-w-4xl mx-auto p-4 sm:p-6">
             <div class="bg-black rounded-lg border border-green-400/30 overflow-hidden flex flex-col h-full">
               <!-- Chat header -->
               <div class="bg-black px-3 sm:px-4 py-2 sm:py-3 border-b border-green-400/30 flex justify-between items-center flex-shrink-0">

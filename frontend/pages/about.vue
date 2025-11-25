@@ -118,7 +118,7 @@
       <section class="py-16 px-4 border-t border-green-400/20">
         <div class="max-w-4xl mx-auto">
           <h2 class="text-3xl font-bold mb-12 text-center">NEW: EPHEMERAL FILE RELAY</h2>
-          <div class="grid md:grid-cols-2 gap-8 items-center">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div class="space-y-6 text-green-400/80 leading-relaxed">
               <p class="text-lg">
                 We've expanded beyond chat with <span class="text-green-400 font-semibold">File Drop</span>, a secure way to share files without leaving a trace.
@@ -164,7 +164,7 @@
         <div class="max-w-4xl mx-auto">
           <h2 class="text-3xl font-bold mb-12 text-center">TECHNICAL ARCHITECTURE</h2>
           
-          <div class="grid md:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Frontend -->
             <div class="bg-black/40 border border-green-400/30 p-6 backdrop-blur-sm">
               <h3 class="text-xl font-bold mb-4 flex items-center">
