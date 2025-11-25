@@ -45,8 +45,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
             </div>
-            <h2 class="text-2xl font-bold mb-3 text-green-400">Send File</h2>
-            <p class="text-green-400/70">Upload a file to share securely with someone nearby or via code.</p>
+            <h2 class="text-2xl font-bold mb-3 text-green-400">Start a Room</h2>
+            <p class="text-green-400/70">Create a secure room to share files with others.</p>
           </div>
         </button>
 
@@ -62,112 +62,60 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             </div>
-            <h2 class="text-2xl font-bold mb-3 text-green-400">Receive File</h2>
-            <p class="text-green-400/70">Enter a code or scan nearby to download shared files.</p>
+            <h2 class="text-2xl font-bold mb-3 text-green-400">Join a Room</h2>
+            <p class="text-green-400/70">Enter a code or scan nearby to join an existing room.</p>
           </div>
         </button>
       </div>
 
-      <!-- Send Interface -->
-      <div v-if="mode === 'send'" class="max-w-2xl mx-auto">
+      <!-- Setup Interface (Send/Create) -->
+      <div v-if="mode === 'send' && !connected" class="max-w-2xl mx-auto">
         <button @click="reset" class="mb-6 text-green-400/60 hover:text-green-400 flex items-center">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
           Back
         </button>
 
         <div class="bg-black/40 border border-green-400/30 p-8 backdrop-blur-sm">
-          <h2 class="text-2xl font-bold mb-6 text-green-400">Send File</h2>
+          <h2 class="text-2xl font-bold mb-6 text-green-400">Create Room</h2>
 
-          <!-- Step 1: Choose Method -->
-          <div v-if="!transferMethod" class="space-y-4">
-            <p class="text-green-400/80 mb-4">How do you want to share?</p>
+          <div class="space-y-4">
+            <p class="text-green-400/80 mb-4">How do you want to connect?</p>
             <button @click="selectMethod('code')" class="w-full p-4 border border-green-400/30 hover:border-green-400 hover:bg-green-400/10 text-left transition-all">
-              <span class="font-bold block mb-1">🔑 One-Time Code</span>
-              <span class="text-sm text-green-400/60">Generate a short code to share manually.</span>
+              <span class="font-bold block mb-1">🔑 Generate Code</span>
+              <span class="text-sm text-green-400/60">Create a room with a unique code.</span>
             </button>
             <button @click="selectMethod('location')" class="w-full p-4 border border-green-400/30 hover:border-green-400 hover:bg-green-400/10 text-left transition-all">
-              <span class="font-bold block mb-1">📍 Nearby (Location)</span>
-              <span class="text-sm text-green-400/60">Share with anyone physically close to you.</span>
-            </button>
-          </div>
-
-          <!-- Step 2: Connection Info -->
-          <div v-else-if="!fileSelected" class="space-y-6">
-            <div v-if="transferMethod === 'code'" class="text-center p-6 border border-green-400/50 bg-green-400/5 rounded">
-              <p class="text-sm text-green-400/70 mb-2">Share this code with the receiver:</p>
-              <div class="text-4xl font-bold tracking-widest text-green-400 mb-2">{{ generatedCode }}</div>
-              <p class="text-xs text-green-400/50">Waiting for receiver to join...</p>
-            </div>
-
-            <div v-if="transferMethod === 'location'" class="text-center p-6 border border-green-400/50 bg-green-400/5 rounded">
-              <p class="text-sm text-green-400/70 mb-2">Location-based Sharing Active</p>
-              <div v-if="location" class="text-lg font-mono mb-2">{{ location.latitude.toFixed(4) }}, {{ location.longitude.toFixed(4) }}</div>
-              <div v-else class="animate-pulse text-green-400">Acquiring GPS...</div>
-              <p class="text-xs text-green-400/50">Anyone nearby can receive your file.</p>
-            </div>
-
-            <!-- File Selection -->
-            <div 
-              @drop.prevent="handleDrop" 
-              @dragover.prevent 
-              class="border-2 border-dashed border-green-400/30 hover:border-green-400 hover:bg-green-400/5 rounded-lg p-12 text-center transition-all cursor-pointer"
-              @click="fileInput?.click()"
-            >
-              <input ref="fileInput" type="file" class="hidden" @change="handleFileSelect" />
-              <svg class="w-12 h-12 mx-auto mb-4 text-green-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <p class="text-green-400 font-bold">Click to Select File</p>
-              <p class="text-green-400/50 text-sm mt-2">or drag and drop here</p>
-            </div>
-          </div>
-
-          <!-- Step 3: Sending Progress -->
-          <div v-else class="space-y-6">
-            <div class="flex items-center justify-between">
-              <span class="font-bold truncate max-w-[200px]">{{ selectedFile?.name }}</span>
-              <span class="text-sm text-green-400/70">{{ formatSize(selectedFile?.size) }}</span>
-            </div>
-            
-            <div class="w-full bg-green-400/10 h-4 rounded overflow-hidden">
-              <div class="bg-green-400 h-full transition-all duration-200" :style="{ width: `${uploadProgress}%` }"></div>
-            </div>
-            
-            <div class="text-center text-sm text-green-400/70">
-              {{ uploadStatus }}
-            </div>
-
-            <button v-if="uploadProgress === 100" @click="reset" class="w-full py-3 border border-green-400 hover:bg-green-400 hover:text-black transition-all font-bold">
-              SEND ANOTHER
+              <span class="font-bold block mb-1">📍 Use Location</span>
+              <span class="text-sm text-green-400/60">Create a room based on your location.</span>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Receive Interface -->
-      <div v-if="mode === 'receive'" class="max-w-2xl mx-auto">
+      <!-- Setup Interface (Receive/Join) -->
+      <div v-if="mode === 'receive' && !connected" class="max-w-2xl mx-auto">
         <button @click="reset" class="mb-6 text-green-400/60 hover:text-green-400 flex items-center">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
           Back
         </button>
 
         <div class="bg-black/40 border border-green-400/30 p-8 backdrop-blur-sm">
-          <h2 class="text-2xl font-bold mb-6 text-green-400">Receive File</h2>
+          <h2 class="text-2xl font-bold mb-6 text-green-400">Join Room</h2>
 
           <!-- Step 1: Choose Method -->
           <div v-if="!transferMethod" class="space-y-4">
             <button @click="selectMethod('code')" class="w-full p-4 border border-green-400/30 hover:border-green-400 hover:bg-green-400/10 text-left transition-all">
               <span class="font-bold block mb-1">🔑 Enter Code</span>
-              <span class="text-sm text-green-400/60">Enter the code shared by the sender.</span>
+              <span class="text-sm text-green-400/60">Enter the code shared by the creator.</span>
             </button>
             <button @click="selectMethod('location')" class="w-full p-4 border border-green-400/30 hover:border-green-400 hover:bg-green-400/10 text-left transition-all">
               <span class="font-bold block mb-1">📍 Scan Nearby</span>
-              <span class="text-sm text-green-400/60">Find files dropped at your location.</span>
+              <span class="text-sm text-green-400/60">Find rooms at your location.</span>
             </button>
           </div>
 
           <!-- Step 2: Enter Code or Scan -->
-          <div v-else-if="!connected" class="space-y-6">
+          <div v-else class="space-y-6">
             <div v-if="transferMethod === 'code'">
               <label class="block text-sm text-green-400/70 mb-2">Enter Code</label>
               <input 
@@ -200,32 +148,90 @@
               </button>
             </div>
           </div>
+        </div>
+      </div>
 
-          <!-- Step 3: Receiving -->
-          <div v-else class="space-y-6">
-            <div class="text-center p-4 bg-green-400/5 border border-green-400/30 rounded">
-              <p class="text-green-400 font-bold animate-pulse">Waiting for files...</p>
-              <p class="text-xs text-green-400/50 mt-1">Room: {{ roomId }}</p>
+      <!-- Unified Room Interface -->
+      <div v-if="connected" class="max-w-6xl mx-auto">
+        <button @click="reset" class="mb-6 text-green-400/60 hover:text-green-400 flex items-center">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+          Back / Leave Room
+        </button>
+
+        <div class="grid md:grid-cols-2 gap-8">
+          <!-- Send Panel -->
+          <div class="bg-black/40 border border-green-400/30 p-8 backdrop-blur-sm">
+            <h2 class="text-2xl font-bold mb-6 text-green-400">Send File</h2>
+            
+            <!-- Room Info -->
+            <div class="mb-8 p-4 bg-green-400/5 border border-green-400/20 rounded text-center">
+              <p class="text-sm text-green-400/70 mb-1">Room Code / ID</p>
+              <p class="text-3xl font-bold tracking-widest text-green-400">{{ roomId }}</p>
             </div>
 
-            <!-- Incoming Files List -->
-            <div v-for="file in incomingFiles" :key="file.id" class="bg-black border border-green-400/30 p-4 rounded">
-              <div class="flex justify-between items-center mb-2">
-                <span class="font-bold truncate">{{ file.fileName }}</span>
-                <span class="text-xs text-green-400/60">{{ Math.round((file.receivedChunks / file.totalChunks) * 100) }}%</span>
-              </div>
-              <div class="w-full bg-green-400/10 h-2 rounded overflow-hidden mb-3">
-                <div class="bg-green-400 h-full transition-all duration-200" :style="{ width: `${(file.receivedChunks / file.totalChunks) * 100}%` }"></div>
+            <!-- Drop Zone -->
+            <div v-if="!fileSelected" 
+              @drop.prevent="handleDrop" 
+              @dragover.prevent 
+              class="border-2 border-dashed border-green-400/30 hover:border-green-400 hover:bg-green-400/5 rounded-lg p-12 text-center transition-all cursor-pointer"
+              @click="fileInput?.click()"
+            >
+              <input ref="fileInput" type="file" class="hidden" @change="handleFileSelect" />
+              <svg class="w-12 h-12 mx-auto mb-4 text-green-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <p class="text-green-400 font-bold">Click to Select File</p>
+              <p class="text-green-400/50 text-sm mt-2">or drag and drop here</p>
+            </div>
+
+            <!-- Upload Progress -->
+            <div v-else class="space-y-6">
+              <div class="flex items-center justify-between">
+                <span class="font-bold truncate max-w-[200px]">{{ selectedFile?.name }}</span>
+                <span class="text-sm text-green-400/70">{{ formatSize(selectedFile?.size) }}</span>
               </div>
               
-              <button 
-                v-if="file.receivedChunks === file.totalChunks" 
-                @click="downloadFile(file.id)"
-                class="w-full py-2 border border-green-400 text-green-400 hover:bg-green-400 hover:text-black transition-all text-sm font-bold"
-              >
-                DOWNLOAD
+              <div class="w-full bg-green-400/10 h-4 rounded overflow-hidden">
+                <div class="bg-green-400 h-full transition-all duration-200" :style="{ width: `${uploadProgress}%` }"></div>
+              </div>
+              
+              <div class="text-center text-sm text-green-400/70">
+                {{ uploadStatus }}
+              </div>
+
+              <button v-if="uploadProgress === 100" @click="resetUpload" class="w-full py-3 border border-green-400 hover:bg-green-400 hover:text-black transition-all font-bold">
+                SEND ANOTHER
               </button>
-              <div v-else class="text-center text-xs text-green-400/50">Decrypting & Reassembling...</div>
+            </div>
+          </div>
+
+          <!-- Receive Panel -->
+          <div class="bg-black/40 border border-green-400/30 p-8 backdrop-blur-sm">
+            <h2 class="text-2xl font-bold mb-6 text-green-400">Incoming Files</h2>
+
+            <div v-if="incomingFiles.length === 0" class="text-center py-12 border border-green-400/10 rounded">
+              <p class="text-green-400/40 animate-pulse">Waiting for files...</p>
+            </div>
+
+            <div v-else class="space-y-4">
+              <div v-for="file in incomingFiles" :key="file.id" class="bg-black border border-green-400/30 p-4 rounded">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="font-bold truncate">{{ file.fileName }}</span>
+                  <span class="text-xs text-green-400/60">{{ Math.round((file.receivedChunks / file.totalChunks) * 100) }}%</span>
+                </div>
+                <div class="w-full bg-green-400/10 h-2 rounded overflow-hidden mb-3">
+                  <div class="bg-green-400 h-full transition-all duration-200" :style="{ width: `${(file.receivedChunks / file.totalChunks) * 100}%` }"></div>
+                </div>
+                
+                <button 
+                  v-if="file.receivedChunks === file.totalChunks" 
+                  @click="downloadFile(file.id)"
+                  class="w-full py-2 border border-green-400 text-green-400 hover:bg-green-400 hover:text-black transition-all text-sm font-bold"
+                >
+                  DOWNLOAD
+                </button>
+                <div v-else class="text-center text-xs text-green-400/50">Decrypting & Reassembling...</div>
+              </div>
             </div>
           </div>
         </div>
@@ -267,9 +273,7 @@ onMounted(() => {
   
   socketService.on('file_chunk_received', handleChunkReceived)
   socketService.on('user_joined_drop_room', () => {
-    if (mode.value === 'send') {
-      uploadStatus.value = 'Receiver joined! Ready to send.'
-    }
+    // Optional: Notify user
   })
 })
 
@@ -313,6 +317,7 @@ const selectMethod = async (method: 'code' | 'location') => {
       roomId.value = generatedCode.value
       encryptionKey.value = await deriveKeyFromSecret(generatedCode.value)
       socketService.joinFileDropRoom(roomId.value)
+      connected.value = true
     } else if (method === 'location' && location.value) {
       // Room ID is quantized location
       const lat = location.value.latitude.toFixed(3)
@@ -320,6 +325,7 @@ const selectMethod = async (method: 'code' | 'location') => {
       roomId.value = `${lat},${lon}`
       encryptionKey.value = await deriveKeyFromLocation(location.value.latitude, location.value.longitude)
       socketService.joinFileDropRoom(roomId.value)
+      connected.value = true
     }
   }
 }
@@ -393,6 +399,14 @@ const startUpload = async () => {
     console.error(e)
     uploadStatus.value = 'Error sending file.'
   }
+}
+
+const resetUpload = () => {
+  selectedFile.value = null
+  fileSelected.value = false
+  uploadProgress.value = 0
+  uploadStatus.value = ''
+  if (fileInput.value) fileInput.value.value = ''
 }
 
 // Receiver Logic
