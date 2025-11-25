@@ -146,7 +146,7 @@
 
 
           <!-- Feature 6 - Open Source -->
-          <div class="md:col-span-2 bg-black/40 border border-green-400/30 p-6 hover:border-green-400 transition-all group backdrop-blur-sm">
+          <div class="bg-black/40 border border-green-400/30 p-6 hover:border-green-400 transition-all group backdrop-blur-sm">
             <div class="flex items-start space-x-4">
               <div class="w-12 h-12 flex-shrink-0 border-2 border-green-400 rounded-lg flex items-center justify-center group-hover:animate-pulse">
                 <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

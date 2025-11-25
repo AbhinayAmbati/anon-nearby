@@ -7,7 +7,6 @@ import { connectDatabase } from './config/database.js';
 import { connectRedis } from './config/redis.js';
 import { setupSocketHandlers } from './socket/socketHandlers.js';
 import userRoutes from './routes/userRoutes.js';
-
 import fileDropRoutes from './routes/fileDropRoutes.js';
 import { 
   generalLimiter, 
@@ -47,11 +46,21 @@ app.locals.redisClient = redisClient;
 
 // Routes
 app.use('/api/users', userRoutes);
-
 app.use('/api/file-drop', fileDropRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Socket.IO setup
+setupSocketHandlers(io, redisClient);
+
+const PORT = process.env.PORT || 3001;
+
+server.listen(PORT, () => {
+  console.log(`🟩 Anon-Nearby Server running on port ${PORT}`);
+  console.log(`🟩 Socket.IO enabled with CORS for ${process.env.FRONTEND_URL}`);
   console.log(`🟩 File Drop API available at /api/file-drop`);
 });
 
