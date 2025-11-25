@@ -30,6 +30,10 @@ router.post('/create', async (req, res) => {
       });
     }
 
+    if (typeof password !== 'string' || typeof sessionId !== 'string') {
+      return res.status(400).json({ error: 'Invalid input types' });
+    }
+
     // Generate unique room code
     let code;
     let isUnique = false;
@@ -100,7 +104,10 @@ router.post('/join', async (req, res) => {
       });
     }
 
-    // Find room
+    if (typeof code !== 'string' || typeof password !== 'string' || typeof sessionId !== 'string') {
+      return res.status(400).json({ error: 'Invalid input types' });
+    }
+
     const room = await FileDropRoom.findOne({ code });
 
     if (!room) {
@@ -173,7 +180,9 @@ router.post('/upload', async (req, res) => {
       });
     }
 
-    // Find and verify room
+    if (typeof code !== 'string' || typeof password !== 'string' || typeof sessionId !== 'string') {
+      return res.status(400).json({ error: 'Invalid input types' });
+    }
     const room = await FileDropRoom.findOne({ code });
 
     if (!room) {
@@ -249,7 +258,9 @@ router.post('/download', async (req, res) => {
       });
     }
 
-    // Find and verify room
+    if (typeof code !== 'string' || typeof password !== 'string' || typeof sessionId !== 'string' || typeof fileId !== 'string') {
+      return res.status(400).json({ error: 'Invalid input types' });
+    }
     const room = await FileDropRoom.findOne({ code });
 
     if (!room) {
@@ -309,6 +320,10 @@ router.get('/info/:code', async (req, res) => {
   try {
     const { code } = req.params;
 
+    if (typeof code !== 'string') {
+      return res.status(400).json({ error: 'Invalid input types' });
+    }
+
     const room = await FileDropRoom.findOne({ code }).select('-password -files.encryptedData -accessLog');
 
     if (!room) {
@@ -345,6 +360,10 @@ router.delete('/file', async (req, res) => {
       return res.status(400).json({ 
         error: 'Missing required fields' 
       });
+    }
+
+    if (typeof code !== 'string' || typeof password !== 'string' || typeof sessionId !== 'string' || typeof fileId !== 'string') {
+      return res.status(400).json({ error: 'Invalid input types' });
     }
 
     const room = await FileDropRoom.findOne({ code });
@@ -393,6 +412,10 @@ router.delete('/room', async (req, res) => {
 
     if (!code || !password || !sessionId) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (typeof code !== 'string' || typeof password !== 'string' || typeof sessionId !== 'string') {
+      return res.status(400).json({ error: 'Invalid input types' });
     }
 
     const room = await FileDropRoom.findOne({ code });
