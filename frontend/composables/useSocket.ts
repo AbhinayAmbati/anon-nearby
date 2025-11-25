@@ -62,22 +62,36 @@ class SocketService {
       this.emit('message_received', data)
     })
 
-    this.socket.on('message_blocked', (data) => {
+    this.socket.on('message_blocked', (data: any) => {
       console.warn('🚫 Message blocked:', data.message)
       this.emit('message_blocked', data)
     })
 
-    this.socket.on('temporarily_muted', (data) => {
+    this.socket.on('temporarily_muted', (data: any) => {
       console.warn('🔇 Temporarily muted:', data.message)
       this.emit('temporarily_muted', data)
     })
 
-    this.socket.on('partner_disconnected', (data) => {
+    this.socket.on('partner_disconnected', (data: any) => {
       console.log('🔴 Partner disconnected')
       this.emit('partner_disconnected', data)
     })
 
-    this.socket.on('error', (error) => {
+    // File Drop Events
+    this.socket.on('user_joined_drop_room', (data: any) => {
+      console.log('👤 User joined drop room:', data.socketId)
+      this.emit('user_joined_drop_room', data)
+    })
+
+    this.socket.on('file_chunk_received', (data: any) => {
+      // Don't log every chunk to avoid console spam
+      if (data.chunkIndex === 0 || data.chunkIndex === data.totalChunks - 1) {
+        console.log(`📂 File chunk received: ${data.fileName} (${data.chunkIndex + 1}/${data.totalChunks})`)
+      }
+      this.emit('file_chunk_received', data)
+    })
+
+    this.socket.on('error', (error: any) => {
       console.error('❌ Socket error:', error)
       this.emit('error', error)
     })
@@ -103,10 +117,23 @@ class SocketService {
     }
   }
 
-  disconnect() {
+  // --- File Drop Methods ---
+
+  joinFileDropRoom(roomId: string) {
     if (this.socket) {
-      this.socket.disconnect()
-      this.socket = null
+      this.socket.emit('join_file_drop_room', { roomId })
+    }
+  }
+
+  leaveFileDropRoom(roomId: string) {
+    if (this.socket) {
+      this.socket.emit('leave_file_drop_room', { roomId })
+    }
+  }
+
+  sendFileChunk(data: any) {
+    if (this.socket) {
+      this.socket.emit('file_chunk', data)
     }
   }
 

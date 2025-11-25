@@ -431,6 +431,55 @@ export const setupSocketHandlers = (io, redisClient) => {
       sessionsBySocketId.delete(socket.id);
       await handleUserDisconnection(socket, userSession, redisClient, io, chatTimeouts);
     });
+
+    // --- File Drop Handlers ---
+    
+    socket.on('join_file_drop_room', (data) => {
+      const { roomId } = data;
+      if (!roomId) return;
+      
+      socket.join(`file_drop_${roomId}`);
+      console.log(`📂 Socket ${socket.id} joined file drop room ${roomId}`);
+      
+      // Notify others in the room
+      socket.to(`file_drop_${roomId}`).emit('user_joined_drop_room', {
+        socketId: socket.id
+      });
+    });
+
+    socket.on('leave_file_drop_room', (data) => {
+      const { roomId } = data;
+      if (!roomId) return;
+      
+      socket.leave(`file_drop_${roomId}`);
+      console.log(`📂 Socket ${socket.id} left file drop room ${roomId}`);
+    });
+
+    socket.on('file_chunk', (data) => {
+      const { roomId, fileId, chunkIndex, totalChunks, encryptedBytes, fileName, fileType } = data;
+      
+      if (!roomId || !fileId || encryptedBytes === undefined) {
+        return;
+      }
+
+      // Relay to all other users in the room
+      socket.to(`file_drop_${roomId}`).emit('file_chunk_received', {
+        fileId,
+        chunkIndex,
+        totalChunks,
+        encryptedBytes,
+        fileName,
+        fileType,
+        senderId: socket.id
+      });
+      
+      if (chunkIndex === 0) {
+        console.log(`📂 Starting file transfer: ${fileName} (${totalChunks} chunks) in room ${roomId}`);
+      } else if (chunkIndex === totalChunks - 1) {
+        console.log(`📂 Completed file transfer: ${fileName} in room ${roomId}`);
+      }
+    });
+
   });
 };
 
@@ -686,24 +735,26 @@ const createChatRoom = async (user1Session, user2Session, redisClient, io, sessi
     startChatTimeout(roomId, io, chatTimeouts);
     
     // Track session statistics with smart matchmaking engine
-    try {
-      await matchmakingEngine.updateSessionStats(user1Session.sessionId, {
-        matchedWithSession: user2Session.sessionId,
-        chatStartTime: new Date(),
-        matchDistance: user1Session.location && user2Session.location ? 
-          calculateDistance(user1Session.location, user2Session.location) : null
-      });
-      
-      await matchmakingEngine.updateSessionStats(user2Session.sessionId, {
-        matchedWithSession: user1Session.sessionId,
-        chatStartTime: new Date(),
-        matchDistance: user1Session.location && user2Session.location ? 
-          calculateDistance(user1Session.location, user2Session.location) : null
-      });
-      
-      console.log(`📊 Smart matchmaking stats updated for ${user1Session.codename} ↔ ${user2Session.codename}`);
-    } catch (statsError) {
-      console.error('Error updating smart matchmaking stats:', statsError);
+    if (matchmakingEngine) {
+      try {
+        await matchmakingEngine.updateSessionStats(user1Session.sessionId, {
+          matchedWithSession: user2Session.sessionId,
+          chatStartTime: new Date(),
+          matchDistance: user1Session.location && user2Session.location ? 
+            calculateDistance(user1Session.location, user2Session.location) : null
+        });
+        
+        await matchmakingEngine.updateSessionStats(user2Session.sessionId, {
+          matchedWithSession: user1Session.sessionId,
+          chatStartTime: new Date(),
+          matchDistance: user1Session.location && user2Session.location ? 
+            calculateDistance(user1Session.location, user2Session.location) : null
+        });
+        
+        console.log(`📊 Smart matchmaking stats updated for ${user1Session.codename} ↔ ${user2Session.codename}`);
+      } catch (statsError) {
+        console.error('Error updating smart matchmaking stats:', statsError);
+      }
     }
     
   } catch (error) {
@@ -901,12 +952,11 @@ const handleUserDisconnection = async (socket, userSession, redisClient, io, cha
         } catch (error) {
           useMongoDb = false;
           await inMemoryStorage.deleteChatRoom(chatRoom.roomId);
-          console.log(`🗑️ Deleted chat room from memory (fallback): ${chatRoom.roomId}`);
         }
       }
     }
     
-    // Remove user location from Redis/in-memory storage
+    // Remove from Redis
     try {
       if (redisClient && useRedis) {
         await redisClient.geoRem('user_locations', userSession.sessionId);

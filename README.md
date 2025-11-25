@@ -1,10 +1,12 @@
 # ANON-NEARBY
 
-A location-based anonymous chat application that connects strangers within proximity for ephemeral conversations. Because sometimes you want to talk to someone nearby without the commitment of actually meeting them.
+A location-based anonymous chat application that connects strangers within proximity for ephemeral conversations and secure file sharing. Because sometimes you want to talk to someone nearby without the commitment of actually meeting them.
 
 ## Overview
 
 ANON-NEARBY provides anonymous, real-time chat functionality between users within a 1000-meter radius. Each user receives a randomly generated codename and can engage in temporary conversations that disappear when the session ends. It's designed for spontaneous, commitment-free interaction with nearby individuals.
+
+New in v2.0: **Ephemeral File Relay** allows users to securely share files with nearby users or via one-time codes without any server-side storage.
 
 ## Core Functionality
 
@@ -16,10 +18,12 @@ Conversations are completely ephemeral - once either participant disconnects, al
 
 **AI-Powered Content Moderation**: Real-time message filtering using Google's Gemini AI and pattern recognition to detect inappropriate content, harassment, spam, and abusive language. Progressive enforcement system provides warnings, temporary restrictions, and escalating penalties for policy violations.
 
+**Ephemeral File Relay**: A secure, serverless-like file transfer system. Files are encrypted client-side using the Web Crypto API before being relayed in chunks through the server. The server never sees the original file or the encryption keys, ensuring complete privacy.
+
 ## Technical Stack
 
 ### Frontend Architecture
-Built with Nuxt.js for a modern Vue-based single-page application. Features a Matrix-inspired terminal aesthetic with green-on-black theming and fully responsive design optimized for mobile, tablet, and desktop experiences.
+Built with Nuxt.js for a modern Vue-based single-page application. Features a Matrix-inspired terminal aesthetic with green-on-black theming and fully responsive design optimized for mobile, tablet, and desktop experiences. Uses the **Web Crypto API** for client-side encryption/decryption of file transfers.
 
 ### Backend Infrastructure
 Node.js with Express framework provides the server foundation, while Socket.IO enables real-time bidirectional communication for instant messaging capabilities.
@@ -39,6 +43,8 @@ Utilizes Redis GEO commands for efficient proximity searches within the configur
 **AI Content Moderation**: Real-time message analysis using Google Gemini AI to detect and prevent inappropriate content, harassment, spam, and abusive language. Progressive enforcement with warnings, shadow bans, and temporary restrictions.
 
 **Real-Time Communication**: Instant message delivery with Socket.IO for responsive chat experiences, including typing indicators and connection status.
+
+**Ephemeral File Relay**: Securely share files with nearby users or via a 6-digit code. Files are encrypted on your device, relayed through the server in chunks, and decrypted only by the recipient. No files are ever stored on the server.
 
 **Ephemeral Conversations**: All chat data is automatically purged when sessions end, ensuring complete privacy and no permanent records.
 
@@ -149,6 +155,26 @@ If database connections fail, the application automatically falls back to in-mem
 - **Instant Destruction**: All data deleted when chat ends
 - **Browser Refresh = Data Loss**: Intentional privacy feature
 - **No Message History**: Cannot retrieve past conversations
+
+### File Drop Architecture - Ephemeral Relay
+
+The File Drop feature uses a unique "relay-only" approach to ensure privacy and security:
+
+1.  **Client-Side Encryption**:
+    *   Files are read as `ArrayBuffer` in the browser.
+    *   A symmetric key (AES-GCM) is derived from a shared secret (the 6-digit code or quantized location coordinates).
+    *   The file is encrypted *before* it leaves the sender's device.
+
+2.  **Chunked Relay**:
+    *   The encrypted file is split into small chunks (e.g., 64KB).
+    *   Chunks are emitted to the server via `socket.emit('file_chunk')`.
+    *   The server immediately relays the chunk to the recipient in the same room (`socket.to(roomId).emit('file_chunk_received')`).
+    *   **Crucially, the server does not store the file or the chunks.** It acts purely as a pipe.
+
+3.  **Client-Side Decryption**:
+    *   The recipient receives encrypted chunks.
+    *   Chunks are decrypted immediately using the same derived key.
+    *   The file is reassembled in the browser's memory and made available for download.
 
 ### Data Flow Summary
 ```
