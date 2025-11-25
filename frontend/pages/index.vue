@@ -220,23 +220,13 @@
     <!-- Footer -->
     <AppFooter />
 
-    <!-- Privacy Modal -->
-    <div v-if="showPrivacy" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div class="bg-white p-6 rounded-lg shadow-lg w-1/2 max-w-2xl">
-        <h2 class="text-2xl font-bold mb-4">Privacy Policy</h2>
-        <p class="text-sm text-gray-600">
-          Your privacy is our top priority. We do not collect or store any personal information. Messages are encrypted and only visible to the recipient.
-        </p>
-        <button @click="showPrivacy = false" class="mt-4 px-4 py-2 bg-green-400 text-white rounded hover:bg-green-500 transition-colors">
-          Close
-        </button>
-      </div>
-    </div>
+    <!-- Terms & Privacy Modal -->
+    <TermsModal />
   </div>
 </template>
 
 <script setup lang="ts">
-const showPrivacy = ref(false)
+// No extra script needed for modal as it handles its own state
 </script>
 
 <style scoped>
