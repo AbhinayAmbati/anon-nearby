@@ -8,15 +8,22 @@ const chatRoomSchema = new mongoose.Schema({
   },
   roomType: {
     type: String,
-    enum: ['proximity', 'named'], // proximity = auto-matched, named = user-created
+    enum: ['proximity', 'named', 'public'],
     default: 'proximity'
   },
   roomName: {
-    type: String, // Human-readable name for named rooms
+    type: String,
     default: null
   },
   creatorSessionId: {
-    type: String, // Session ID of the user who created the room
+    type: String,
+    default: null
+  },
+  location: {
+    type: {
+      latitude: Number,
+      longitude: Number
+    },
     default: null
   },
   participants: [{
@@ -31,7 +38,7 @@ const chatRoomSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    expires: 3600 // Auto-delete after 1 hour
+    expires: 3600
   },
   lastActivity: {
     type: Date,

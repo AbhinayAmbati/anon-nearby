@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="min-h-screen bg-black text-green-400 font-mono">
+  <div id="app" class="min-h-screen bg-black text-green-400 font-mono overflow-hidden flex flex-col">
 
     
     <!-- Matrix background effect -->
@@ -23,79 +23,167 @@
         <div 
           v-else-if="appState === 'permission'"
           key="permission"
-          class="flex flex-col min-h-screen"
+          class="relative flex flex-col min-h-screen overflow-hidden"
         >
-          <div class="flex-grow flex items-center justify-center p-4 sm:p-8">
-            <div class="text-center max-w-sm sm:max-w-md w-full">
-              <div class="mb-6 sm:mb-8">
-                <h1 class="text-xl sm:text-2xl lg:text-3xl font-mono font-bold text-green-400 mb-3 sm:mb-4 tracking-widest">
-                  ANON-NEARBY CHAT
-                </h1>
-                <div class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 border-2 border-green-400 rounded-full flex items-center justify-center">
-                  <svg class="w-6 h-6 sm:w-8 sm:h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+          <!-- Animated grid background -->
+          <div class="absolute inset-0 opacity-20">
+            <div class="absolute inset-0" style="background-image: linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px); background-size: 50px 50px;"></div>
+          </div>
+          
+          <!-- Radial gradient overlay -->
+          <div class="absolute inset-0 bg-gradient-radial from-green-400/5 via-transparent to-transparent"></div>
+          
+          <div class="relative flex-grow flex items-center justify-center p-4 sm:p-8">
+            <div class="text-center max-w-6xl w-full">
+              <!-- Hero Header -->
+              <div class="mb-12 sm:mb-16">
+                <div class="inline-block mb-6">
+                  <div class="relative">
+                    <!-- Pulsing rings -->
+                    <div class="absolute inset-0 border-2 border-green-400/30 rounded-full animate-ping"></div>
+                    <div class="absolute inset-0 border-2 border-green-400/20 rounded-full animate-pulse"></div>
+                    
+                    <!-- Icon container -->
+                    <div class="relative w-20 h-20 sm:w-24 sm:h-24 border-2 border-green-400 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                      <svg class="w-10 h-10 sm:w-12 sm:h-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              
-              <div class="space-y-3 sm:space-y-4 text-sm sm:text-base px-4">
-                <p class="text-green-400/80">
-                  Connect anonymously with people near you.
-                </p>
-                <p class="text-green-400/60 text-xs sm:text-sm">
-                  No accounts. No history. No traces.
+                
+                <h1 class="text-4xl sm:text-5xl font-bold text-green-400 mb-4">ANON-NEARBY</h1>
+
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-400 mb-4">Connect with people around you</h2>
+                
+                <p class="text-sm sm:text-base text-green-400/60 max-w-md mx-auto">
+                  Connect with people around you. No accounts, no history, no traces.
                 </p>
                 
                 <!-- Nearby nodes count -->
-                <div v-if="showNearbyCount" class="flex items-center justify-center space-x-2 text-green-400/60 text-xs sm:text-sm nearby-count-appear">
+                <div v-if="showNearbyCount" class="mt-6 inline-flex items-center space-x-2 px-4 py-2 bg-green-400/10 border border-green-400/30 rounded-full text-green-400/80 text-sm backdrop-blur-sm">
                   <div class="w-2 h-2 bg-green-400 rounded-full connection-indicator"></div>
                   <span v-if="nearbyCountLoading" class="loading-dots">
                     Detecting nearby nodes<span>.</span><span>.</span><span>.</span>
                   </span>
-                  <span v-else class="transition-state">
-                    Active nodes nearby: <strong class="text-green-400">{{ displayNearbyCount }}</strong>
+                  <span v-else>
+                    <strong class="text-green-400">{{ displayNearbyCount }}</strong> active nodes nearby
                   </span>
                 </div>
               </div>
               
-              <!-- Divider -->
-              <div class="mt-8 mb-6 px-4">
-                <div class="border-t border-green-400/20"></div>
-              </div>
+            
               
-              <!-- Two options -->
-              <div class="space-y-4 px-4">
+              <!-- Modern Grid Options -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 px-4 mt-8">
                 <!-- Option 1: Proximity Chat -->
-                <div class="border border-green-400/30 p-4 rounded">
-                  <h3 class="text-green-400 font-bold mb-2 text-sm">PROXIMITY CHAT</h3>
-                  <p class="text-green-400/60 text-xs mb-3">Auto-match with people nearby (requires location)</p>
-                  <button
-                    v-if="!userLocation"
-                    @click="requestLocationPermission"
-                    class="w-full px-4 py-2 bg-green-400 text-gray-900 border border-green-400 hover:bg-green-500 hover:border-green-500 transition-all duration-200 font-mono font-bold tracking-wider text-xs sm:text-sm"
-                  >
-                    ENABLE LOCATION
-                  </button>
-                  <button
-                    v-else
-                    @click="enterGrid"
-                    class="w-full px-4 py-2 bg-green-400 text-gray-900 border border-green-400 hover:bg-green-500 hover:border-green-500 transition-all duration-200 font-mono font-bold tracking-wider text-xs sm:text-sm animate-pulse"
-                  >
-                    ENTER THE GRID
-                  </button>
+                <div class="group relative overflow-hidden rounded-lg border border-green-400/30 bg-black/40 backdrop-blur-sm hover:border-green-400 hover:shadow-lg hover:shadow-green-400/20 transition-all duration-300">
+                  <!-- Animated background gradient -->
+                  <div class="absolute inset-0 bg-gradient-to-br from-green-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
+                  <div class="relative p-6">
+                    <!-- Icon -->
+                    <div class="w-12 h-12 mb-4 rounded-lg bg-green-400/10 border border-green-400/30 flex items-center justify-center group-hover:scale-110 group-hover:bg-green-400/20 transition-all duration-300">
+                      <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    
+                    <h3 class="text-green-400 font-bold mb-2 text-base tracking-wider">PROXIMITY</h3>
+                    <p class="text-green-400/60 text-xs mb-4 leading-relaxed">Auto-match with people nearby</p>
+                    
+                    <!-- Badge -->
+                    <div class="mb-4">
+                      <span class="inline-block px-2 py-1 text-xs bg-green-400/10 border border-green-400/30 text-green-400 rounded">Requires Location</span>
+                    </div>
+                    
+                    <button
+                      v-if="!userLocation"
+                      @click="requestLocationPermission"
+                      class="w-full px-4 py-3 bg-green-400 text-black border border-green-400 hover:bg-green-500 hover:border-green-500 hover:shadow-lg hover:shadow-green-400/50 transition-all duration-200 font-mono font-bold tracking-wider text-sm relative overflow-hidden group/btn"
+                    >
+                      <span class="relative z-10">ENABLE LOCATION</span>
+                      <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-green-400 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
+                    </button>
+                    <button
+                      v-else
+                      @click="enterGrid"
+                      class="w-full px-4 py-3 bg-green-400 text-black border border-green-400 hover:bg-green-500 hover:border-green-500 hover:shadow-lg hover:shadow-green-400/50 transition-all duration-200 font-mono font-bold tracking-wider text-sm animate-pulse"
+                    >
+                      ENTER THE GRID
+                    </button>
+                  </div>
                 </div>
                 
-                <!-- Option 2: Create Room -->
-                <div class="border border-green-400/30 p-4 rounded">
-                  <h3 class="text-green-400 font-bold mb-2 text-sm">PRIVATE ROOM</h3>
-                  <p class="text-green-400/60 text-xs mb-3">Create a room & share link (no location needed)</p>
-                  <button
-                    @click="showCreateRoomDialog = true"
-                    class="w-full px-4 py-2 bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold tracking-wider text-xs sm:text-sm"
-                  >
-                    CREATE ROOM
-                  </button>
+                <!-- Option 2: Public Room -->
+                <div class="group relative overflow-hidden rounded-lg border border-green-400/30 bg-black/40 backdrop-blur-sm hover:border-green-400 hover:shadow-lg hover:shadow-green-400/20 transition-all duration-300">
+                  <!-- Animated background gradient -->
+                  <div class="absolute inset-0 bg-gradient-to-br from-green-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
+                  <div class="relative p-6">
+                    <!-- Icon -->
+                    <div class="w-12 h-12 mb-4 rounded-lg bg-green-400/10 border border-green-400/30 flex items-center justify-center group-hover:scale-110 group-hover:bg-green-400/20 transition-all duration-300">
+                      <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    
+                    <h3 class="text-green-400 font-bold mb-2 text-base tracking-wider">PUBLIC ROOM</h3>
+                    <p class="text-green-400/60 text-xs mb-4 leading-relaxed">Create nearby group chat</p>
+                    
+                    <!-- Badge -->
+                    <div class="mb-4">
+                      <span class="inline-block px-2 py-1 text-xs bg-green-400/10 border border-green-400/30 text-green-400 rounded">Location-Based</span>
+                    </div>
+                    
+                    <button
+                      v-if="!userLocation"
+                      @click="requestLocationPermission"
+                      class="w-full px-4 py-3 bg-green-400 text-black border border-green-400 hover:bg-green-500 hover:border-green-500 hover:shadow-lg hover:shadow-green-400/50 transition-all duration-200 font-mono font-bold tracking-wider text-sm relative overflow-hidden group/btn"
+                    >
+                      <span class="relative z-10">ENABLE LOCATION</span>
+                      <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-green-400 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
+                    </button>
+                    <button
+                      v-else
+                      @click="createPublicRoom"
+                      class="w-full px-4 py-3 bg-green-400 text-black border border-green-400 hover:bg-green-500 hover:border-green-500 hover:shadow-lg hover:shadow-green-400/50 transition-all duration-200 font-mono font-bold tracking-wider text-sm relative overflow-hidden group/btn"
+                    >
+                      <span class="relative z-10">CREATE PUBLIC ROOM</span>
+                      <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-green-400 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Option 3: Private Room -->
+                <div class="group relative overflow-hidden rounded-lg border border-green-400/30 bg-black/40 backdrop-blur-sm hover:border-green-400 hover:shadow-lg hover:shadow-green-400/20 transition-all duration-300">
+                  <!-- Animated background gradient -->
+                  <div class="absolute inset-0 bg-gradient-to-br from-green-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
+                  <div class="relative p-6">
+                    <!-- Icon -->
+                    <div class="w-12 h-12 mb-4 rounded-lg bg-green-400/10 border border-green-400/30 flex items-center justify-center group-hover:scale-110 group-hover:bg-green-400/20 transition-all duration-300">
+                      <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                    </div>
+                    
+                    <h3 class="text-green-400 font-bold mb-2 text-base tracking-wider">PRIVATE ROOM</h3>
+                    <p class="text-green-400/60 text-xs mb-4 leading-relaxed">Create & share custom room</p>
+                    
+                    <!-- Badge -->
+                    <div class="mb-4">
+                      <span class="inline-block px-2 py-1 text-xs bg-green-400/10 border border-green-400/30 text-green-400 rounded">Shareable Link</span>
+                    </div>
+                    
+                    <button
+                      @click="showCreateRoomDialog = true"
+                      class="w-full px-4 py-3 bg-transparent border-2 border-green-400 text-green-400 hover:bg-green-400 hover:text-black hover:shadow-lg hover:shadow-green-400/50 transition-all duration-200 font-mono font-bold tracking-wider text-sm relative overflow-hidden group/btn"
+                    >
+                      <span class="relative z-10">CREATE ROOM</span>
+                    </button>
+                  </div>
                 </div>
               </div>
               
@@ -145,25 +233,48 @@
         </div>
 
         <!-- Chat State -->
-        <div v-else-if="appState === 'chatting'" key="chatting" class="flex flex-col h-screen bg-black">
+        <div v-else-if="appState === 'chatting'" key="chatting" class="flex flex-col h-screen">
           <div class="flex-1 flex flex-col w-full max-w-4xl mx-auto p-4 sm:p-6">
-            <div class="bg-black rounded-lg border border-green-400/30 overflow-hidden flex flex-col h-full">
+            <div class="bg-black/40 backdrop-blur-sm rounded-lg border border-green-400/30 overflow-hidden flex flex-col h-full">
               <!-- Chat header -->
-              <div class="bg-black px-3 sm:px-4 py-2 sm:py-3 border-b border-green-400/30 flex justify-between items-center flex-shrink-0">
+              <div class="bg-black/60 backdrop-blur-sm px-3 sm:px-4 py-2 sm:py-3 border-b border-green-400/30 flex justify-between items-center flex-shrink-0">
                 <div class="flex items-center space-x-2">
                   <div class="w-2 h-2 bg-green-400 rounded-full connection-indicator"></div>
                   <span class="text-green-400 font-mono text-sm sm:text-base truncate">Connected to {{ partnerCodename }}</span>
                 </div>
-                <button 
-                  @click="disconnectFromChat" 
-                  class="text-red-400 hover:text-red-300 font-mono text-xs sm:text-sm flex-shrink-0 ml-2"
-                >
-                  <span>DISCONNECT</span>
-                </button>
+                
+                <div class="flex items-center">
+                  <!-- Copy Room ID Button -->
+                  <button 
+                    v-if="currentRoomId" 
+                    @click="copyRoomId"
+                    class="mr-3 p-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 rounded transition-all relative group"
+                    title="Copy Room ID"
+                  >
+                    <svg v-if="!roomIdCopied" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <svg v-else class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    
+                    <!-- Tooltip -->
+                    <span class="absolute top-full right-0 mt-2 px-2 py-1 bg-black border border-green-400/30 text-green-400 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                      {{ roomIdCopied ? 'Copied!' : 'Copy Room ID' }}
+                    </span>
+                  </button>
+
+                  <button 
+                    @click="disconnectFromChat" 
+                    class="text-red-400 hover:text-red-300 font-mono text-xs sm:text-sm flex-shrink-0"
+                  >
+                    <span>DISCONNECT</span>
+                  </button>
+                </div>
               </div>
               
               <!-- Messages area -->
-              <div class="flex-1 p-3 sm:p-4 overflow-y-auto bg-black" ref="messagesContainer">
+              <div class="flex-1 p-3 sm:p-4 overflow-y-auto" ref="messagesContainer">
                 <div v-if="messages.length === 0" class="text-center text-green-400/60 py-4 sm:py-8 text-sm sm:text-base">
                   Start your anonymous conversation...
                 </div>
@@ -182,7 +293,7 @@
               </div>
               
               <!-- Input area -->
-              <div class="bg-black p-3 sm:px-4 sm:py-3 border-t border-green-400/30 flex-shrink-0">
+              <div class="bg-black/60 backdrop-blur-sm p-3 sm:px-4 sm:py-3 border-t border-green-400/30 flex-shrink-0">
                 <form @submit.prevent="sendChatMessage" class="flex space-x-2">
                   <input
                     v-model="messageInput"
@@ -328,6 +439,8 @@ const showShareLinkDialog = ref(false)
 const shareableLink = ref('')
 const linkCopied = ref(false)
 const currentRoomName = ref('')
+const currentRoomId = ref('')
+const roomIdCopied = ref(false)
 
 const socketUrl = process.env.NUXT_PUBLIC_SOCKET_URL
 
@@ -613,6 +726,7 @@ const initializeSocket = async () => {
       console.log('🏠 Named room created:', data)
       shareableLink.value = data.shareableLink
       currentRoomName.value = data.roomName
+      currentRoomId.value = data.roomId
       
       // Close create dialog and show share dialog
       showCreateRoomDialog.value = false
@@ -628,6 +742,7 @@ const initializeSocket = async () => {
     socket.on('named_room_joined', (data: any) => {
       console.log('🚪 Joined named room:', data)
       currentRoomName.value = data.roomName
+      currentRoomId.value = data.roomId
       
       // Transition to chatting state
       appState.value = 'chatting'
@@ -655,6 +770,35 @@ const initializeSocket = async () => {
           messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
         }
       })
+    })
+
+    socket.on('user_left_room', (data: any) => {
+      console.log('👋 User left room:', data.codename)
+      // Update participant count in UI
+      if (currentRoomName.value) {
+        partnerCodename.value = `Room: ${currentRoomName.value} (${data.participantCount} users)`
+      }
+      
+      // Add system message
+      messages.value.push({
+        message: `${data.codename} left the room`,
+        from: 'System',
+        timestamp: new Date().toISOString()
+      })
+      
+      nextTick(() => {
+        if (messagesContainer.value) {
+          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+        }
+      })
+    })
+
+    socket.on('room_updated', (data: any) => {
+      console.log('🔄 Room updated:', data)
+      // Update participant count in UI
+      if (currentRoomName.value) {
+        partnerCodename.value = `Room: ${data.roomName} (${data.participantCount} users)`
+      }
     })
 
     socket.on('error', (errorData: any) => {
@@ -845,6 +989,109 @@ const createRoom = async () => {
   }
 }
 
+// Join public room function (location-based)
+const joinPublicRoom = async () => {
+  try {
+    if (!userLocation.value) {
+      error.value = 'Location required for public rooms'
+      return
+    }
+    
+    console.log('🌍 Joining nearby public room...')
+    appState.value = 'loading'
+    loadingMessage.value = 'Finding nearby public room...'
+    
+    // If socket not connected, initialize it first
+    if (!socket || !socket.connected) {
+      console.log('🔌 Socket not connected, initializing...')
+      await initializeSocket()
+      
+      // Wait a bit for socket to connect
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+    
+    // If no session exists, join the grid first
+    if (!userSessionId.value && socket && socket.connected) {
+      console.log('📝 Joining grid for public room...')
+      loadingMessage.value = 'Joining grid...'
+      socket.emit('join_grid', {
+        ...userLocation.value,
+        radius: selectedRadius.value
+      })
+      
+      // Wait for session to be created
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+    
+    if (socket && socket.connected) {
+      loadingMessage.value = 'Finding nearby public room...'
+      socket.emit('join_public_room', {
+        location: userLocation.value,
+        radius: selectedRadius.value
+      })
+    } else {
+      error.value = 'Connection failed. Please try again.'
+      appState.value = 'permission'
+    }
+  } catch (err: any) {
+    console.error('Error joining public room:', err)
+    error.value = 'Failed to join public room'
+    appState.value = 'permission'
+  }
+}
+
+// Create public room function (location-based)
+const createPublicRoom = async () => {
+  try {
+    if (!userLocation.value) {
+      error.value = 'Location required for public rooms'
+      return
+    }
+    
+    console.log('🌍 Creating public room...')
+    appState.value = 'loading'
+    loadingMessage.value = 'Creating public room...'
+    
+    // If socket not connected, initialize it first
+    if (!socket || !socket.connected) {
+      console.log('🔌 Socket not connected, initializing...')
+      await initializeSocket()
+      
+      // Wait a bit for socket to connect
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+    
+    // If no session exists, join the grid first
+    if (!userSessionId.value && socket && socket.connected) {
+      console.log('📝 Joining grid for public room...')
+      loadingMessage.value = 'Joining grid...'
+      socket.emit('join_grid', {
+        ...userLocation.value,
+        radius: selectedRadius.value
+      })
+      
+      // Wait for session to be created
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+    
+    if (socket && socket.connected) {
+      loadingMessage.value = 'Creating public room...'
+      // Emit join_public_room which will create a new room if none exists nearby
+      socket.emit('join_public_room', {
+        location: userLocation.value,
+        radius: selectedRadius.value
+      })
+    } else {
+      error.value = 'Connection failed. Please try again.'
+      appState.value = 'permission'
+    }
+  } catch (err: any) {
+    console.error('Error creating public room:', err)
+    error.value = 'Failed to create public room'
+    appState.value = 'permission'
+  }
+}
+
 const copyLinkToClipboard = async () => {
   try {
     await navigator.clipboard.writeText(shareableLink.value)
@@ -854,6 +1101,19 @@ const copyLinkToClipboard = async () => {
     }, 2000)
   } catch (err) {
     console.error('Failed to copy link:', err)
+  }
+}
+
+const copyRoomId = async () => {
+  if (!currentRoomId.value) return
+  try {
+    await navigator.clipboard.writeText(currentRoomId.value)
+    roomIdCopied.value = true
+    setTimeout(() => {
+      roomIdCopied.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy room ID:', err)
   }
 }
 

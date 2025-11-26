@@ -675,6 +675,247 @@ export const setupSocketHandlers = (io, redisClient) => {
       }
     });
 
+    // Join a public room (find nearby or create new)
+    socket.on('join_public_room', async (data) => {
+      try {
+        console.log('🌍 User requesting to join nearby public room:', socket.id);
+        
+        if (!userSession) {
+          socket.emit('error', { message: 'Session not found. Please rejoin the grid.' });
+          return;
+        }
+        
+        const { location, radius } = data;
+        if (!location || !location.latitude || !location.longitude) {
+          socket.emit('error', { message: 'Location required for public rooms' });
+          return;
+        }
+        
+        const MAX_ROOM_SIZE = 10; // Maximum users per public room
+        const NEARBY_RADIUS = radius || 5000; // Use provided radius or default 5km
+        
+        // Find nearby active public rooms with space
+        let publicRoom = null;
+        let nearbyRooms = [];
+        
+        try {
+          if (useMongoDb) {
+            // Find all active public rooms
+            const allPublicRooms = await ChatRoom.find({
+              roomType: 'public',
+              isActive: true
+            });
+            
+            // Filter by distance and capacity
+            for (const room of allPublicRooms) {
+              if (room.participants.length >= MAX_ROOM_SIZE) continue;
+              
+              // Get creator's location from their session
+              const creatorSession = await ActiveSession.findOne({ sessionId: room.creatorSessionId });
+              if (!creatorSession || !creatorSession.location) continue;
+              
+              const distance = inMemoryStorage.calculateDistance(
+                location.latitude,
+                location.longitude,
+                creatorSession.location.latitude,
+                creatorSession.location.longitude
+              );
+              
+              if (distance <= NEARBY_RADIUS) {
+                nearbyRooms.push({ room, distance });
+              }
+            }
+            
+            // Sort by distance and pick closest
+            if (nearbyRooms.length > 0) {
+              nearbyRooms.sort((a, b) => a.distance - b.distance);
+              publicRoom = nearbyRooms[0].room;
+            }
+          } else {
+            // In-memory search
+            const allRooms = Array.from(inMemoryStorage.chatRooms.values());
+            for (const room of allRooms) {
+              if (room.roomType !== 'public' || !room.isActive || room.participants.length >= MAX_ROOM_SIZE) continue;
+              if (!room.location) continue;
+              
+              const distance = inMemoryStorage.calculateDistance(
+                location.latitude,
+                location.longitude,
+                room.location.latitude,
+                room.location.longitude
+              );
+              
+              if (distance <= NEARBY_RADIUS) {
+                nearbyRooms.push({ room, distance });
+              }
+            }
+            
+            // Sort by distance and pick closest
+            if (nearbyRooms.length > 0) {
+              nearbyRooms.sort((a, b) => a.distance - b.distance);
+              publicRoom = nearbyRooms[0].room;
+            }
+          }
+        } catch (error) {
+          useMongoDb = false;
+          const allRooms = Array.from(inMemoryStorage.chatRooms.values());
+          for (const room of allRooms) {
+            if (room.roomType !== 'public' || !room.isActive || room.participants.length >= MAX_ROOM_SIZE) continue;
+            if (!room.location) continue;
+            
+            const distance = inMemoryStorage.calculateDistance(
+              location.latitude,
+              location.longitude,
+              room.location.latitude,
+              room.location.longitude
+            );
+            
+            if (distance <= NEARBY_RADIUS) {
+              nearbyRooms.push({ room, distance });
+            }
+          }
+          
+          // Sort by distance and pick closest
+          if (nearbyRooms.length > 0) {
+            nearbyRooms.sort((a, b) => a.distance - b.distance);
+            publicRoom = nearbyRooms[0].room;
+          }
+        }
+        
+        // If no room found, create a new public room
+        if (!publicRoom) {
+          console.log('📢 Creating new nearby public room...');
+          const roomId = generateRoomId();
+          
+          const chatRoomData = {
+            roomId,
+            roomType: 'public',
+            roomName: 'Public Chat Room',
+            creatorSessionId: userSession.sessionId,
+            location: {  // Store location for nearby matching
+              latitude: location.latitude,
+              longitude: location.longitude
+            },
+            participants: [{
+              sessionId: userSession.sessionId,
+              codename: userSession.codename,
+              socketId: socket.id
+            }],
+            isActive: true
+          };
+          
+          try {
+            if (useMongoDb) {
+              publicRoom = new ChatRoom(chatRoomData);
+              await publicRoom.save();
+            } else {
+              await inMemoryStorage.saveChatRoom(chatRoomData);
+              publicRoom = chatRoomData;
+            }
+          } catch (error) {
+            useMongoDb = false;
+            await inMemoryStorage.saveChatRoom(chatRoomData);
+            publicRoom = chatRoomData;
+          }
+          
+          console.log(`📢 Created new public room: ${roomId}`);
+        } else {
+          // Join existing public room
+          console.log(`📢 Joining existing public room: ${publicRoom.roomId}`);
+          
+          const newParticipant = {
+            sessionId: userSession.sessionId,
+            codename: userSession.codename,
+            socketId: socket.id
+          };
+          
+          try {
+            if (useMongoDb) {
+              await ChatRoom.updateOne(
+                { roomId: publicRoom.roomId },
+                { 
+                  $push: { participants: newParticipant },
+                  lastActivity: new Date()
+                }
+              );
+            } else {
+              publicRoom.participants.push(newParticipant);
+              await inMemoryStorage.updateChatRoom(publicRoom.roomId, {
+                participants: publicRoom.participants,
+                lastActivity: new Date()
+              });
+            }
+          } catch (error) {
+            useMongoDb = false;
+            publicRoom.participants.push(newParticipant);
+            await inMemoryStorage.updateChatRoom(publicRoom.roomId, {
+              participants: publicRoom.participants,
+              lastActivity: new Date()
+            });
+          }
+        }
+        
+        // Update user session
+        const updateData = { chatRoomId: publicRoom.roomId, connectedWith: 'public_room' };
+        
+        try {
+          if (useMongoDb) {
+            await ActiveSession.updateOne(
+              { sessionId: userSession.sessionId },
+              updateData
+            );
+          } else {
+            await inMemoryStorage.updateSession(userSession.sessionId, updateData);
+          }
+        } catch (error) {
+          useMongoDb = false;
+          await inMemoryStorage.updateSession(userSession.sessionId, updateData);
+        }
+        
+        // Update local session object
+        userSession.chatRoomId = publicRoom.roomId;
+        userSession.connectedWith = 'public_room';
+        
+        // Update the session reference
+        if (sessionsBySocketId.has(socket.id)) {
+          sessionsBySocketId.get(socket.id).chatRoomId = publicRoom.roomId;
+          sessionsBySocketId.get(socket.id).connectedWith = 'public_room';
+        }
+        
+        // Join the socket room
+        socket.join(publicRoom.roomId);
+        
+        // Clear scanning interval
+        if (socket.scanningInterval) {
+          clearInterval(socket.scanningInterval);
+          socket.scanningInterval = null;
+        }
+        
+        // Notify the user
+        const participantCount = publicRoom.participants ? publicRoom.participants.length : 1;
+        socket.emit('named_room_joined', {
+          roomId: publicRoom.roomId,
+          roomName: 'Public Chat Room',
+          participantCount: participantCount
+        });
+        
+        // Notify existing participants
+        socket.to(publicRoom.roomId).emit('user_joined_room', {
+          codename: userSession.codename,
+          participantCount: participantCount
+        });
+        
+        // Reset chat timeout on activity
+        resetChatTimeout(publicRoom.roomId, io, chatTimeouts);
+        
+        console.log(`📢 ${userSession.codename} joined public room: ${publicRoom.roomId} (${participantCount} users)`);
+        
+      } catch (error) {
+        console.error('Error joining public room:', error);
+        socket.emit('error', { message: 'Failed to join public room' });
+      }
+    });
+
     // --- File Drop Handlers ---
     
     socket.on('join_file_drop_room', (data) => {
@@ -1128,7 +1369,7 @@ const handleUserDisconnection = async (socket, userSession, redisClient, io, cha
   try {
     console.log(`🧹 Starting cleanup for: ${userSession.codename} (${userSession.sessionId})`);
     
-    // If user was in a chat room, notify the other user and cleanup
+    // If user was in a chat room, handle based on room type
     if (userSession.chatRoomId) {
       let chatRoom;
       try {
@@ -1150,16 +1391,69 @@ const handleUserDisconnection = async (socket, userSession, redisClient, io, cha
       }
       
       if (chatRoom) {
-        console.log(`🔗 Cleaning up chat room: ${chatRoom.roomId}`);
+        console.log(`🔗 User leaving chat room: ${chatRoom.roomId} (type: ${chatRoom.roomType || 'proximity'})`);
         
-        // Clear chat timeout for this room
-        clearChatTimeout(chatRoom.roomId, chatTimeouts);
+        const isMultiUserRoom = chatRoom.roomType === 'named' || chatRoom.roomType === 'public';
+        const remainingParticipants = chatRoom.participants.filter(p => p.sessionId !== userSession.sessionId);
         
-        // Notify and disconnect the other participant
-        let otherParticipantSessionId = null;
-        chatRoom.participants.forEach(participant => {
-          if (participant.sessionId !== userSession.sessionId) {
-            otherParticipantSessionId = participant.sessionId;
+        if (isMultiUserRoom && remainingParticipants.length > 0) {
+          // Multi-user room (named or public) - remove user but keep room active
+          console.log(`👥 Removing user from multi-user room. ${remainingParticipants.length} users remaining.`);
+          
+          // Remove the disconnecting user from participants
+          try {
+            if (useMongoDb) {
+              await ChatRoom.updateOne(
+                { roomId: chatRoom.roomId },
+                { 
+                  $pull: { participants: { sessionId: userSession.sessionId } },
+                  lastActivity: new Date()
+                }
+              );
+            } else {
+              await inMemoryStorage.updateChatRoom(chatRoom.roomId, {
+                participants: remainingParticipants,
+                lastActivity: new Date()
+              });
+            }
+          } catch (error) {
+            useMongoDb = false;
+            await inMemoryStorage.updateChatRoom(chatRoom.roomId, {
+              participants: remainingParticipants,
+              lastActivity: new Date()
+            });
+          }
+          
+          // Notify remaining users that someone left
+          io.to(chatRoom.roomId).emit('user_left_room', {
+            codename: userSession.codename,
+            participantCount: remainingParticipants.length
+          });
+          
+          // Update room name display for remaining users
+          remainingParticipants.forEach(participant => {
+            const participantSocket = io.sockets.sockets.get(participant.socketId);
+            if (participantSocket) {
+              participantSocket.emit('room_updated', {
+                roomName: chatRoom.roomName || 'Public Chat Room',
+                participantCount: remainingParticipants.length
+              });
+            }
+          });
+          
+          // Reset chat timeout (room is still active)
+          resetChatTimeout(chatRoom.roomId, io, chatTimeouts);
+          
+          console.log(`✅ User removed from room. Room remains active with ${remainingParticipants.length} users.`);
+        } else {
+          // Proximity room or last user leaving - close the room completely
+          console.log(`🔒 Closing room (proximity or last user): ${chatRoom.roomId}`);
+          
+          // Clear chat timeout for this room
+          clearChatTimeout(chatRoom.roomId, chatTimeouts);
+          
+          // Notify and disconnect remaining participants
+          remainingParticipants.forEach(participant => {
             const otherSocket = io.sockets.sockets.get(participant.socketId);
             if (otherSocket) {
               otherSocket.emit('partner_disconnected', {
@@ -1167,44 +1461,42 @@ const handleUserDisconnection = async (socket, userSession, redisClient, io, cha
               });
               otherSocket.leave(userSession.chatRoomId);
             }
-          }
-        });
-        
-        // Update other participant's session to remove chat room reference
-        if (otherParticipantSessionId) {
-          try {
-            if (useMongoDb) {
-              await ActiveSession.updateOne(
-                { sessionId: otherParticipantSessionId },
-                { $unset: { chatRoomId: 1 }, connectedWith: null }
-              );
-            } else {
-              await inMemoryStorage.updateSession(otherParticipantSessionId, { 
+            
+            // Update their session to remove chat room reference
+            try {
+              if (useMongoDb) {
+                ActiveSession.updateOne(
+                  { sessionId: participant.sessionId },
+                  { $unset: { chatRoomId: 1 }, connectedWith: null }
+                ).catch(err => console.error('Error updating participant session:', err));
+              } else {
+                inMemoryStorage.updateSession(participant.sessionId, { 
+                  chatRoomId: null, 
+                  connectedWith: null 
+                }).catch(err => console.error('Error updating participant session:', err));
+              }
+            } catch (error) {
+              useMongoDb = false;
+              inMemoryStorage.updateSession(participant.sessionId, { 
                 chatRoomId: null, 
                 connectedWith: null 
-              });
+              }).catch(err => console.error('Error updating participant session:', err));
+            }
+          });
+          
+          // Delete the chat room completely
+          try {
+            if (useMongoDb) {
+              await ChatRoom.deleteOne({ roomId: chatRoom.roomId });
+              console.log(`🗑️ Deleted chat room from MongoDB: ${chatRoom.roomId}`);
+            } else {
+              await inMemoryStorage.deleteChatRoom(chatRoom.roomId);
+              console.log(`🗑️ Deleted chat room from memory: ${chatRoom.roomId}`);
             }
           } catch (error) {
             useMongoDb = false;
-            await inMemoryStorage.updateSession(otherParticipantSessionId, { 
-              chatRoomId: null, 
-              connectedWith: null 
-            });
-          }
-        }
-        
-        // Completely delete the chat room (not just mark inactive)
-        try {
-          if (useMongoDb) {
-            await ChatRoom.deleteOne({ roomId: chatRoom.roomId });
-            console.log(`🗑️ Deleted chat room from MongoDB: ${chatRoom.roomId}`);
-          } else {
             await inMemoryStorage.deleteChatRoom(chatRoom.roomId);
-            console.log(`🗑️ Deleted chat room from memory: ${chatRoom.roomId}`);
           }
-        } catch (error) {
-          useMongoDb = false;
-          await inMemoryStorage.deleteChatRoom(chatRoom.roomId);
         }
       }
     }
