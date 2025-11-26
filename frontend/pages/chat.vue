@@ -59,23 +59,45 @@
                 </div>
               </div>
               
-              <!-- Location permission button -->
-              <button
-                v-if="!userLocation"
-                @click="requestLocationPermission"
-                class="mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 w-full sm:w-auto bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold tracking-wider text-sm sm:text-base"
-              >
-                ENABLE LOCATION
-              </button>
+              <!-- Divider -->
+              <div class="mt-8 mb-6 px-4">
+                <div class="border-t border-green-400/20"></div>
+              </div>
               
-              <!-- Enter grid button -->
-              <button
-                v-else
-                @click="enterGrid"
-                class="mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 w-full sm:w-auto bg-green-400 text-gray-900 border border-green-400 hover:bg-green-500 hover:border-green-500 transition-all duration-200 font-mono font-bold tracking-wider text-sm sm:text-base animate-pulse"
-              >
-                ENTER THE GRID
-              </button>
+              <!-- Two options -->
+              <div class="space-y-4 px-4">
+                <!-- Option 1: Proximity Chat -->
+                <div class="border border-green-400/30 p-4 rounded">
+                  <h3 class="text-green-400 font-bold mb-2 text-sm">PROXIMITY CHAT</h3>
+                  <p class="text-green-400/60 text-xs mb-3">Auto-match with people nearby (requires location)</p>
+                  <button
+                    v-if="!userLocation"
+                    @click="requestLocationPermission"
+                    class="w-full px-4 py-2 bg-green-400 text-gray-900 border border-green-400 hover:bg-green-500 hover:border-green-500 transition-all duration-200 font-mono font-bold tracking-wider text-xs sm:text-sm"
+                  >
+                    ENABLE LOCATION
+                  </button>
+                  <button
+                    v-else
+                    @click="enterGrid"
+                    class="w-full px-4 py-2 bg-green-400 text-gray-900 border border-green-400 hover:bg-green-500 hover:border-green-500 transition-all duration-200 font-mono font-bold tracking-wider text-xs sm:text-sm animate-pulse"
+                  >
+                    ENTER THE GRID
+                  </button>
+                </div>
+                
+                <!-- Option 2: Create Room -->
+                <div class="border border-green-400/30 p-4 rounded">
+                  <h3 class="text-green-400 font-bold mb-2 text-sm">PRIVATE ROOM</h3>
+                  <p class="text-green-400/60 text-xs mb-3">Create a room & share link (no location needed)</p>
+                  <button
+                    @click="showCreateRoomDialog = true"
+                    class="w-full px-4 py-2 bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold tracking-wider text-xs sm:text-sm"
+                  >
+                    CREATE ROOM
+                  </button>
+                </div>
+              </div>
               
               <div v-if="error" class="mt-3 sm:mt-4 text-red-400 text-xs sm:text-sm px-2">
                 {{ error }}
@@ -211,6 +233,78 @@
       </Transition>
     </div>
     
+    <!-- Create Room Dialog -->
+    <Transition name="fade">
+      <div 
+        v-if="showCreateRoomDialog" 
+        class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+        @click.self="showCreateRoomDialog = false"
+      >
+        <div class="bg-gray-900 border-2 border-green-400 rounded-lg p-6 max-w-md w-full">
+          <h3 class="text-xl font-mono font-bold text-green-400 mb-4">CREATE CHAT ROOM</h3>
+          <p class="text-green-400/70 text-sm mb-4">Enter a name for your room. You'll get a shareable link.</p>
+          
+          <input
+            v-model="newRoomName"
+            type="text"
+            placeholder="Room name..."
+            class="w-full bg-black border border-green-400/30 text-green-400 px-3 py-2 rounded font-mono focus:outline-none focus:border-green-400 mb-4"
+            @keyup.enter="createRoom"
+            maxlength="50"
+          />
+          
+          <div class="flex space-x-3">
+            <button
+              @click="createRoom"
+              :disabled="!newRoomName.trim()"
+              class="flex-1 px-4 py-2 bg-green-400 text-gray-900 border border-green-400 hover:bg-green-500 hover:border-green-500 transition-all duration-200 font-mono font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              CREATE
+            </button>
+            <button
+              @click="showCreateRoomDialog = false"
+              class="flex-1 px-4 py-2 bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold"
+            >
+              CANCEL
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+    
+    <!-- Share Room Link Dialog -->
+    <Transition name="fade">
+      <div 
+        v-if="showShareLinkDialog" 
+        class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+        @click.self="showShareLinkDialog = false"
+      >
+        <div class="bg-gray-900 border-2 border-green-400 rounded-lg p-6 max-w-md w-full">
+          <h3 class="text-xl font-mono font-bold text-green-400 mb-4">ROOM CREATED!</h3>
+          <p class="text-green-400/70 text-sm mb-4">Share this link with others to invite them:</p>
+          
+          <div class="bg-black border border-green-400/30 rounded p-3 mb-4 break-all">
+            <code class="text-green-400 text-xs sm:text-sm">{{ shareableLink }}</code>
+          </div>
+          
+          <div class="flex space-x-3">
+            <button
+              @click="copyLinkToClipboard"
+              class="flex-1 px-4 py-2 bg-green-400 text-gray-900 border border-green-400 hover:bg-green-500 hover:border-green-500 transition-all duration-200 font-mono font-bold"
+            >
+              {{ linkCopied ? 'COPIED!' : 'COPY LINK' }}
+            </button>
+            <button
+              @click="showShareLinkDialog = false"
+              class="flex-1 px-4 py-2 bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold"
+            >
+              CLOSE
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+    
 
   </div>
 </template>
@@ -226,6 +320,14 @@ const { $socket } = useNuxtApp()
 // Nearby count functionality (inline implementation)
 const nearbyCount = ref<number>(0)
 const nearbyCountLoading = ref(false)
+
+// Room creation state
+const showCreateRoomDialog = ref(false)
+const newRoomName = ref('')
+const showShareLinkDialog = ref(false)
+const shareableLink = ref('')
+const linkCopied = ref(false)
+const currentRoomName = ref('')
 
 const socketUrl = process.env.NUXT_PUBLIC_SOCKET_URL
 
@@ -354,8 +456,45 @@ const getCurrentLocation = (): Promise<{ latitude: number; longitude: number }> 
   })
 }
 
-onMounted(() => {
-  initializeApp()
+onMounted(async () => {
+  // Check if there's a room parameter in the URL
+  const route = useRoute()
+  const roomIdFromUrl = route.query.room as string
+  
+  if (roomIdFromUrl) {
+    console.log('🔗 Room ID found in URL:', roomIdFromUrl)
+    
+    // Initialize app first
+    loadingMessage.value = 'Joining room...'
+    await initializeApp()
+    
+    // Wait for socket to connect
+    loadingMessage.value = 'Connecting to room...'
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    // Create a session if needed
+    if (!userSessionId.value && socket && socket.connected) {
+      console.log('📝 Creating session to join room...')
+      loadingMessage.value = 'Creating session...'
+      socket.emit('create_room_session', { roomName: 'Joining via link' })
+      
+      // Wait for session to be created
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+    
+    // Now join the room
+    if (socket && socket.connected) {
+      console.log('🚪 Attempting to join room:', roomIdFromUrl)
+      loadingMessage.value = 'Entering room...'
+      socket.emit('join_named_room', { roomId: roomIdFromUrl })
+    } else {
+      error.value = 'Failed to connect. Please refresh the page.'
+      appState.value = 'permission'
+    }
+  } else {
+    // Normal initialization without room
+    initializeApp()
+  }
 })
 
 const initializeApp = async () => {
@@ -467,6 +606,55 @@ const initializeSocket = async () => {
       connected.value = false
       messages.value = []
       appState.value = 'disconnected'
+    })
+
+    // Named room event listeners
+    socket.on('named_room_created', (data: any) => {
+      console.log('🏠 Named room created:', data)
+      shareableLink.value = data.shareableLink
+      currentRoomName.value = data.roomName
+      
+      // Close create dialog and show share dialog
+      showCreateRoomDialog.value = false
+      newRoomName.value = ''
+      showShareLinkDialog.value = true
+      
+      // Transition to chatting state
+      appState.value = 'chatting'
+      partnerCodename.value = `Room: ${data.roomName}`
+      connected.value = true
+    })
+
+    socket.on('named_room_joined', (data: any) => {
+      console.log('🚪 Joined named room:', data)
+      currentRoomName.value = data.roomName
+      
+      // Transition to chatting state
+      appState.value = 'chatting'
+      partnerCodename.value = `Room: ${data.roomName} (${data.participantCount} users)`
+      connected.value = true
+      messages.value = []
+    })
+
+    socket.on('user_joined_room', (data: any) => {
+      console.log('👤 User joined room:', data.codename)
+      // Update participant count in UI
+      if (currentRoomName.value) {
+        partnerCodename.value = `Room: ${currentRoomName.value} (${data.participantCount} users)`
+      }
+      
+      // Add system message
+      messages.value.push({
+        message: `${data.codename} joined the room`,
+        from: 'System',
+        timestamp: new Date().toISOString()
+      })
+      
+      nextTick(() => {
+        if (messagesContainer.value) {
+          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+        }
+      })
     })
 
     socket.on('error', (errorData: any) => {
@@ -619,6 +807,56 @@ const returnToScanning = () => {
     })
   }
 }
+
+// Room creation functions
+const createRoom = async () => {
+  if (!newRoomName.value.trim()) return
+  
+  try {
+    console.log('🏠 Creating room:', newRoomName.value.trim())
+    
+    // If socket not connected, initialize it first
+    if (!socket || !socket.connected) {
+      console.log('🔌 Socket not connected, initializing...')
+      await initializeSocket()
+      
+      // Wait a bit for socket to connect
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+    
+    // If no session exists, create one without location
+    if (!userSessionId.value && socket && socket.connected) {
+      console.log('📝 Creating session for room...')
+      // Emit a special event to create a session without location
+      socket.emit('create_room_session', { roomName: newRoomName.value.trim() })
+      
+      // Wait for session to be created
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+    
+    if (socket && socket.connected) {
+      socket.emit('create_named_room', { roomName: newRoomName.value.trim() })
+    } else {
+      error.value = 'Connection failed. Please try again.'
+    }
+  } catch (err: any) {
+    console.error('Error creating room:', err)
+    error.value = 'Failed to create room'
+  }
+}
+
+const copyLinkToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(shareableLink.value)
+    linkCopied.value = true
+    setTimeout(() => {
+      linkCopied.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy link:', err)
+  }
+}
+
 </script>
 
 <style scoped>
@@ -685,5 +923,16 @@ const returnToScanning = () => {
   30% {
     opacity: 1;
   }
+}
+
+/* Modal fade transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

@@ -76,7 +76,10 @@
                     <span class="mr-2">▸</span>
                     <span>Smart matchmaking with distance-based ranking</span>
                   </li>
-
+                  <li class="flex items-start">
+                    <span class="mr-2">▸</span>
+                    <span>Create rooms & share links with friends</span>
+                  </li>
                   <li class="flex items-start">
                     <span class="mr-2">▸</span>
                     <span>Real-time typing indicators</span>
@@ -119,6 +122,28 @@
             <p class="text-green-400/70 text-sm leading-relaxed">
               Messages never touch a database. Everything lives in memory and vanishes on disconnect.
             </p>
+          </div>
+
+          <!-- NEW: Feature - Create & Share Rooms -->
+          <div class="md:col-span-2 bg-black/40 border border-green-400/30 p-6 hover:border-green-400 transition-all group backdrop-blur-sm">
+            <div class="flex items-start space-x-4">
+              <div class="w-12 h-12 flex-shrink-0 border-2 border-green-400 rounded-lg flex items-center justify-center group-hover:animate-pulse">
+                <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-xl font-bold mb-3 text-green-400">Create & Share Rooms</h3>
+                <p class="text-green-400/70 text-sm leading-relaxed mb-3">
+                  Create named chat rooms and share links with friends. Perfect for group conversations or planned meetups.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="px-3 py-1 bg-green-400/10 border border-green-400/30 text-green-400 text-xs">Shareable Links</span>
+                  <span class="px-3 py-1 bg-green-400/10 border border-green-400/30 text-green-400 text-xs">Multi-User Rooms</span>
+                  <span class="px-3 py-1 bg-green-400/10 border border-green-400/30 text-green-400 text-xs">One-Click Copy</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Feature 4 - Location Privacy -->

@@ -162,6 +162,60 @@ export const setupSocketHandlers = (io, redisClient) => {
       }
     });
 
+    // Handle creating a session for room-only users (no location required)
+    socket.on('create_room_session', async (data) => {
+      try {
+        console.log('🏠 Creating room-only session for socket:', socket.id);
+        
+        // Generate new session without location
+        const sessionId = generateSessionId();
+        const codename = generateCodename();
+        
+        const sessionData = {
+          sessionId,
+          codename,
+          socketId: socket.id,
+          location: null, // No location for room-only users
+          searchRadius: null,
+          isActive: true,
+          roomOnly: true // Flag to indicate this is a room-only session
+        };
+
+        try {
+          // Try MongoDB first
+          if (useMongoDb) {
+            userSession = new ActiveSession(sessionData);
+            await userSession.save();
+          } else {
+            // Ensure we use in-memory storage
+            await inMemoryStorage.saveSession(sessionData);
+            userSession = sessionData;
+          }
+        } catch (error) {
+          // Fall back to in-memory storage
+          console.log('📝 Using in-memory storage for room session data');
+          useMongoDb = false;
+          await inMemoryStorage.saveSession(sessionData);
+          userSession = sessionData;
+        }
+        
+        socket.emit('session_created', {
+          sessionId,
+          codename,
+          status: 'room_ready'
+        });
+        
+        // Store session reference for this socket
+        sessionsBySocketId.set(socket.id, userSession);
+        
+        console.log(`🏠 ${codename} created room-only session`);
+        
+      } catch (error) {
+        console.error('Error creating room session:', error);
+        socket.emit('error', { message: 'Failed to create session' });
+      }
+    });
+
     // Handle sending messages
     socket.on('send_message', async (data) => {
       try {
@@ -377,6 +431,248 @@ export const setupSocketHandlers = (io, redisClient) => {
       
       sessionsBySocketId.delete(socket.id);
       await handleUserDisconnection(socket, userSession, redisClient, io, chatTimeouts, matchmakingEngine);
+    });
+
+    // --- Named Chat Room Handlers ---
+    
+    // Create a named chat room
+    socket.on('create_named_room', async (data) => {
+      try {
+        const { roomName } = data;
+        
+        if (!roomName || roomName.trim().length === 0) {
+          socket.emit('error', { message: 'Room name is required' });
+          return;
+        }
+        
+        if (!userSession) {
+          socket.emit('error', { message: 'Session not found. Please rejoin the grid.' });
+          return;
+        }
+        
+        // Generate a unique room ID
+        const roomId = generateRoomId();
+        
+        const chatRoomData = {
+          roomId,
+          roomType: 'named',
+          roomName: roomName.trim(),
+          creatorSessionId: userSession.sessionId,
+          participants: [{
+            sessionId: userSession.sessionId,
+            codename: userSession.codename,
+            socketId: socket.id
+          }],
+          isActive: true
+        };
+        
+        // Create chat room in storage
+        try {
+          if (useMongoDb) {
+            const chatRoom = new ChatRoom(chatRoomData);
+            await chatRoom.save();
+          } else {
+            await inMemoryStorage.saveChatRoom(chatRoomData);
+          }
+        } catch (error) {
+          useMongoDb = false;
+          await inMemoryStorage.saveChatRoom(chatRoomData);
+        }
+        
+        // Update user session with chat room ID
+        const updateData = { chatRoomId: roomId, connectedWith: 'named_room' };
+        
+        try {
+          if (useMongoDb) {
+            await ActiveSession.updateOne(
+              { sessionId: userSession.sessionId },
+              updateData
+            );
+          } else {
+            await inMemoryStorage.updateSession(userSession.sessionId, updateData);
+          }
+        } catch (error) {
+          useMongoDb = false;
+          await inMemoryStorage.updateSession(userSession.sessionId, updateData);
+        }
+        
+        // Update local session object
+        userSession.chatRoomId = roomId;
+        userSession.connectedWith = 'named_room';
+        
+        // Update the session reference
+        if (sessionsBySocketId.has(socket.id)) {
+          sessionsBySocketId.get(socket.id).chatRoomId = roomId;
+          sessionsBySocketId.get(socket.id).connectedWith = 'named_room';
+        }
+        
+        // Join the socket room
+        socket.join(roomId);
+        
+        // Clear scanning interval since user is now in a room
+        if (socket.scanningInterval) {
+          clearInterval(socket.scanningInterval);
+          socket.scanningInterval = null;
+        }
+        
+        // Emit success with room details
+        socket.emit('named_room_created', {
+          roomId,
+          roomName: roomName.trim(),
+          shareableLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/chat?room=${roomId}`
+        });
+        
+        // Start chat timeout for this room
+        startChatTimeout(roomId, io, chatTimeouts);
+        
+        console.log(`🏠 ${userSession.codename} created named room: "${roomName.trim()}" (${roomId})`);
+        
+      } catch (error) {
+        console.error('Error creating named room:', error);
+        socket.emit('error', { message: 'Failed to create room' });
+      }
+    });
+    
+    // Join a named chat room
+    socket.on('join_named_room', async (data) => {
+      try {
+        const { roomId } = data;
+        
+        if (!roomId) {
+          socket.emit('error', { message: 'Room ID is required' });
+          return;
+        }
+        
+        if (!userSession) {
+          socket.emit('error', { message: 'Session not found. Please rejoin the grid.' });
+          return;
+        }
+        
+        // Find the chat room
+        let chatRoom;
+        try {
+          if (useMongoDb) {
+            chatRoom = await ChatRoom.findOne({ 
+              roomId,
+              roomType: 'named',
+              isActive: true 
+            });
+          } else {
+            chatRoom = await inMemoryStorage.findChatRoom({ roomId });
+            if (chatRoom && (chatRoom.roomType !== 'named' || !chatRoom.isActive)) {
+              chatRoom = null;
+            }
+          }
+        } catch (error) {
+          useMongoDb = false;
+          chatRoom = await inMemoryStorage.findChatRoom({ roomId });
+        }
+        
+        if (!chatRoom) {
+          socket.emit('error', { message: 'Room not found or no longer active' });
+          return;
+        }
+        
+        // Check if user is already in the room
+        const alreadyInRoom = chatRoom.participants.some(
+          p => p.sessionId === userSession.sessionId
+        );
+        
+        if (alreadyInRoom) {
+          socket.emit('error', { message: 'You are already in this room' });
+          return;
+        }
+        
+        // Add user to the room
+        const newParticipant = {
+          sessionId: userSession.sessionId,
+          codename: userSession.codename,
+          socketId: socket.id
+        };
+        
+        try {
+          if (useMongoDb) {
+            await ChatRoom.updateOne(
+              { roomId },
+              { 
+                $push: { participants: newParticipant },
+                lastActivity: new Date()
+              }
+            );
+          } else {
+            chatRoom.participants.push(newParticipant);
+            await inMemoryStorage.updateChatRoom(roomId, {
+              participants: chatRoom.participants,
+              lastActivity: new Date()
+            });
+          }
+        } catch (error) {
+          useMongoDb = false;
+          chatRoom.participants.push(newParticipant);
+          await inMemoryStorage.updateChatRoom(roomId, {
+            participants: chatRoom.participants,
+            lastActivity: new Date()
+          });
+        }
+        
+        // Update user session
+        const updateData = { chatRoomId: roomId, connectedWith: 'named_room' };
+        
+        try {
+          if (useMongoDb) {
+            await ActiveSession.updateOne(
+              { sessionId: userSession.sessionId },
+              updateData
+            );
+          } else {
+            await inMemoryStorage.updateSession(userSession.sessionId, updateData);
+          }
+        } catch (error) {
+          useMongoDb = false;
+          await inMemoryStorage.updateSession(userSession.sessionId, updateData);
+        }
+        
+        // Update local session object
+        userSession.chatRoomId = roomId;
+        userSession.connectedWith = 'named_room';
+        
+        // Update the session reference
+        if (sessionsBySocketId.has(socket.id)) {
+          sessionsBySocketId.get(socket.id).chatRoomId = roomId;
+          sessionsBySocketId.get(socket.id).connectedWith = 'named_room';
+        }
+        
+        // Join the socket room
+        socket.join(roomId);
+        
+        // Clear scanning interval
+        if (socket.scanningInterval) {
+          clearInterval(socket.scanningInterval);
+          socket.scanningInterval = null;
+        }
+        
+        // Notify the user
+        socket.emit('named_room_joined', {
+          roomId,
+          roomName: chatRoom.roomName,
+          participantCount: chatRoom.participants.length + 1
+        });
+        
+        // Notify existing participants
+        socket.to(roomId).emit('user_joined_room', {
+          codename: userSession.codename,
+          participantCount: chatRoom.participants.length + 1
+        });
+        
+        // Reset chat timeout on activity
+        resetChatTimeout(roomId, io, chatTimeouts);
+        
+        console.log(`🚪 ${userSession.codename} joined named room: "${chatRoom.roomName}" (${roomId})`);
+        
+      } catch (error) {
+        console.error('Error joining named room:', error);
+        socket.emit('error', { message: 'Failed to join room' });
+      }
     });
 
     // --- File Drop Handlers ---

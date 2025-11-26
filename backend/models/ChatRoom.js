@@ -6,6 +6,19 @@ const chatRoomSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  roomType: {
+    type: String,
+    enum: ['proximity', 'named'], // proximity = auto-matched, named = user-created
+    default: 'proximity'
+  },
+  roomName: {
+    type: String, // Human-readable name for named rooms
+    default: null
+  },
+  creatorSessionId: {
+    type: String, // Session ID of the user who created the room
+    default: null
+  },
   participants: [{
     sessionId: String,
     codename: String,
