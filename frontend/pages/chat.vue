@@ -145,14 +145,21 @@
                       <span class="relative z-10">ENABLE LOCATION</span>
                       <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-green-400 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
                     </button>
-                    <button
-                      v-else
-                      @click="createPublicRoom"
-                      class="w-full px-4 py-3 bg-green-400 text-black border border-green-400 hover:bg-green-500 hover:border-green-500 hover:shadow-lg hover:shadow-green-400/50 transition-all duration-200 font-mono font-bold tracking-wider text-sm relative overflow-hidden group/btn"
-                    >
-                      <span class="relative z-10">CREATE PUBLIC ROOM</span>
-                      <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-green-400 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
-                    </button>
+                    <div v-else class="flex flex-col space-y-2">
+                      <button
+                        @click="createPublicRoom"
+                        class="w-full px-4 py-2 bg-green-400 text-black border border-green-400 hover:bg-green-500 hover:border-green-500 transition-all duration-200 font-mono font-bold tracking-wider text-sm relative overflow-hidden group/btn"
+                      >
+                        <span class="relative z-10">CREATE ROOM</span>
+                        <div class="absolute inset-0 bg-gradient-to-r from-green-500 to-green-400 opacity-0 group-hover/btn:opacity-100 transition-opacity"></div>
+                      </button>
+                      <button
+                        @click="joinPublicRoom"
+                        class="w-full px-4 py-2 bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-black transition-all duration-200 font-mono font-bold tracking-wider text-sm"
+                      >
+                        JOIN ROOM
+                      </button>
+                    </div>
                   </div>
                 </div>
                 
@@ -246,15 +253,15 @@
                 <div class="flex items-center">
                   <!-- Copy Room ID Button -->
                   <button 
-                    v-if="currentRoomId" 
+                    v-if="currentRoomId && currentRoomType !== 'public'" 
                     @click="copyRoomId"
-                    class="mr-3 p-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 rounded transition-all relative group"
+                    class="mr-3 p-2 bg-green-400/10 hover:bg-green-400/20 text-green-400 hover:text-green-300 rounded-full transition-all relative group"
                     title="Copy Room ID"
                   >
-                    <svg v-if="!roomIdCopied" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg v-if="!roomIdCopied" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
-                    <svg v-else class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg v-else class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                     
@@ -323,22 +330,6 @@
           v-else-if="appState === 'disconnected'"
           class="flex flex-col min-h-screen"
         >
-          <div class="flex-grow flex items-center justify-center p-4 sm:p-8">
-            <div class="text-center max-w-sm sm:max-w-md w-full">
-              <h2 class="text-lg sm:text-xl font-mono font-bold text-green-400 mb-3 sm:mb-4">
-                CONNECTION TERMINATED
-              </h2>
-              <p class="text-green-400/70 mb-4 sm:mb-6 text-sm sm:text-base px-4">
-                Your chat partner has disconnected.
-              </p>
-              <button
-                @click="returnToScanning"
-                class="px-4 sm:px-6 py-2 sm:py-3 w-full sm:w-auto bg-transparent border border-green-400 text-green-400 hover:bg-green-400 hover:text-gray-900 transition-all duration-200 font-mono font-semibold tracking-wider text-sm sm:text-base"
-              >
-                SCAN AGAIN
-              </button>
-            </div>
-          </div>
           <AppFooter />
         </div>
       </Transition>
@@ -440,6 +431,7 @@ const shareableLink = ref('')
 const linkCopied = ref(false)
 const currentRoomName = ref('')
 const currentRoomId = ref('')
+const currentRoomType = ref('')
 const roomIdCopied = ref(false)
 
 const socketUrl = process.env.NUXT_PUBLIC_SOCKET_URL
@@ -579,7 +571,7 @@ onMounted(async () => {
     
     // Initialize app first
     loadingMessage.value = 'Joining room...'
-    await initializeApp()
+    await initializeApp(false)
     
     // Wait for socket to connect
     loadingMessage.value = 'Connecting to room...'
@@ -610,7 +602,7 @@ onMounted(async () => {
   }
 })
 
-const initializeApp = async () => {
+const initializeApp = async (redirect = true) => {
   appState.value = 'loading'
   error.value = ''
   loadingProgress.value = 0
@@ -633,9 +625,11 @@ const initializeApp = async () => {
     loadingProgress.value = 100
     
     // Move to permission request
-    setTimeout(() => {
-      appState.value = 'permission'
-    }, 1000)
+    if (redirect) {
+      setTimeout(() => {
+        appState.value = 'permission'
+      }, 1000)
+    }
     
   } catch (err: any) {
     error.value = err.message || 'Failed to initialize grid connection'
@@ -704,7 +698,7 @@ const initializeSocket = async () => {
       console.log('🔴 Partner disconnected')
       connected.value = false
       messages.value = []
-      appState.value = 'disconnected'
+      appState.value = 'permission'
     })
 
     socket.on('user_typing', (data: any) => {
@@ -718,7 +712,7 @@ const initializeSocket = async () => {
       error.value = data.message
       connected.value = false
       messages.value = []
-      appState.value = 'disconnected'
+      appState.value = 'permission'
     })
 
     // Named room event listeners
@@ -727,6 +721,7 @@ const initializeSocket = async () => {
       shareableLink.value = data.shareableLink
       currentRoomName.value = data.roomName
       currentRoomId.value = data.roomId
+      currentRoomType.value = data.roomType || 'named'
       
       // Close create dialog and show share dialog
       showCreateRoomDialog.value = false
@@ -743,6 +738,7 @@ const initializeSocket = async () => {
       console.log('🚪 Joined named room:', data)
       currentRoomName.value = data.roomName
       currentRoomId.value = data.roomId
+      currentRoomType.value = data.roomType
       
       // Transition to chatting state
       appState.value = 'chatting'
@@ -852,7 +848,8 @@ const enterGrid = async () => {
     // Join the grid with location and search radius
     socket.emit('join_grid', { 
       ...userLocation.value, 
-      radius: selectedRadius.value 
+      radius: selectedRadius.value,
+      searchMode: 'proximity'
     })
     
   } catch (err: any) {
@@ -934,24 +931,20 @@ const updateSearchRadius = (radius: number) => {
 const disconnectFromChat = async () => {
   if (!socket) return
   
-  socket.emit('disconnect_chat')
+  console.log('🔴 Leaving room...')
+  socket.emit('leave_room')
+  
+  // Reset local state
   connected.value = false
   messages.value = []
-  appState.value = 'disconnected'
-}
-
-const returnToScanning = () => {
-  appState.value = 'scanning'
-  error.value = ''
+  currentRoomName.value = ''
+  currentRoomId.value = ''
+  currentRoomType.value = ''
+  partnerCodename.value = ''
   
-  if (socket && userLocation.value) {
-    socket.emit('join_grid', { 
-      ...userLocation.value, 
-      radius: selectedRadius.value 
-    })
-  }
+  // Go back to dashboard (options)
+  appState.value = 'permission'
 }
-
 // Room creation functions
 const createRoom = async () => {
   if (!newRoomName.value.trim()) return
@@ -1016,7 +1009,8 @@ const joinPublicRoom = async () => {
       loadingMessage.value = 'Joining grid...'
       socket.emit('join_grid', {
         ...userLocation.value,
-        radius: selectedRadius.value
+        radius: selectedRadius.value,
+        searchMode: 'public'
       })
       
       // Wait for session to be created
@@ -1027,7 +1021,8 @@ const joinPublicRoom = async () => {
       loadingMessage.value = 'Finding nearby public room...'
       socket.emit('join_public_room', {
         location: userLocation.value,
-        radius: selectedRadius.value
+        radius: selectedRadius.value,
+        action: 'join'
       })
     } else {
       error.value = 'Connection failed. Please try again.'
@@ -1067,7 +1062,8 @@ const createPublicRoom = async () => {
       loadingMessage.value = 'Joining grid...'
       socket.emit('join_grid', {
         ...userLocation.value,
-        radius: selectedRadius.value
+        radius: selectedRadius.value,
+        searchMode: 'public'
       })
       
       // Wait for session to be created
@@ -1079,7 +1075,8 @@ const createPublicRoom = async () => {
       // Emit join_public_room which will create a new room if none exists nearby
       socket.emit('join_public_room', {
         location: userLocation.value,
-        radius: selectedRadius.value
+        radius: selectedRadius.value,
+        action: 'create'
       })
     } else {
       error.value = 'Connection failed. Please try again.'
@@ -1107,13 +1104,14 @@ const copyLinkToClipboard = async () => {
 const copyRoomId = async () => {
   if (!currentRoomId.value) return
   try {
-    await navigator.clipboard.writeText(currentRoomId.value)
+    const url = `${window.location.origin}${window.location.pathname}?room=${currentRoomId.value}`
+    await navigator.clipboard.writeText(url)
     roomIdCopied.value = true
     setTimeout(() => {
       roomIdCopied.value = false
     }, 2000)
   } catch (err) {
-    console.error('Failed to copy room ID:', err)
+    console.error('Failed to copy room URL:', err)
   }
 }
 

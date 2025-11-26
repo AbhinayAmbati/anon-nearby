@@ -70,6 +70,7 @@ export const setupSocketHandlers = (io, redisClient) => {
           socketId: socket.id,
           location: { latitude, longitude },
           searchRadius: searchRadius,
+          searchMode: data.searchMode || 'proximity',
           isActive: true
         };
 
@@ -134,27 +135,30 @@ export const setupSocketHandlers = (io, redisClient) => {
         // Store session reference for this socket
         sessionsBySocketId.set(socket.id, userSession);
         
-        console.log(`🟩 ${codename} joined the grid at (${latitude}, ${longitude})`);
+        console.log(`🟩 ${codename} joined the grid at (${latitude}, ${longitude}) in ${userSession.searchMode} mode`);
         
-        // Try to find nearby users immediately
-        await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId, matchmakingEngine);
-        
-        // Trigger scanning for all existing scanning users when someone new joins
-        await triggerScanningForAllUsers(redisClient, io, sessionsBySocketId, matchmakingEngine);
-        
-        // Set up periodic scanning for this user
-        const scanningInterval = setInterval(async () => {
-          // Only scan if user is still connected and in scanning mode
-          if (sessionsBySocketId.has(socket.id) && userSession && !userSession.chatRoomId) {
-            await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId, matchmakingEngine);
-          } else {
-            // Clear interval if user is no longer scanning
-            clearInterval(scanningInterval);
-          }
-        }, 1000); // Scan every 1 second for faster connections
-        
-        // Store interval reference for cleanup
-        socket.scanningInterval = scanningInterval;
+        // Only perform proximity scanning if that's the user's intent
+        if (userSession.searchMode === 'proximity') {
+          // Try to find nearby users immediately
+          await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId, matchmakingEngine);
+          
+          // Trigger scanning for all existing scanning users when someone new joins
+          await triggerScanningForAllUsers(redisClient, io, sessionsBySocketId, matchmakingEngine);
+          
+          // Set up periodic scanning for this user
+          const scanningInterval = setInterval(async () => {
+            // Only scan if user is still connected and in scanning mode
+            if (sessionsBySocketId.has(socket.id) && userSession && !userSession.chatRoomId) {
+              await findNearbyUser(socket, userSession, redisClient, io, sessionsBySocketId, matchmakingEngine);
+            } else {
+              // Clear interval if user is no longer scanning
+              clearInterval(scanningInterval);
+            }
+          }, 1000); // Scan every 1 second for faster connections
+          
+          // Store interval reference for cleanup
+          socket.scanningInterval = scanningInterval;
+        }
         
       } catch (error) {
         console.error('Error joining grid:', error);
@@ -519,7 +523,8 @@ export const setupSocketHandlers = (io, redisClient) => {
         socket.emit('named_room_created', {
           roomId,
           roomName: roomName.trim(),
-          shareableLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/chat?room=${roomId}`
+          shareableLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/chat?room=${roomId}`,
+          roomType: 'named'
         });
         
         // Start chat timeout for this room
@@ -655,7 +660,8 @@ export const setupSocketHandlers = (io, redisClient) => {
         socket.emit('named_room_joined', {
           roomId,
           roomName: chatRoom.roomName,
-          participantCount: chatRoom.participants.length + 1
+          participantCount: chatRoom.participants.length + 1,
+          roomType: 'named'
         });
         
         // Notify existing participants
@@ -685,7 +691,7 @@ export const setupSocketHandlers = (io, redisClient) => {
           return;
         }
         
-        const { location, radius } = data;
+        const { location, radius, action } = data;
         if (!location || !location.latitude || !location.longitude) {
           socket.emit('error', { message: 'Location required for public rooms' });
           return;
@@ -698,92 +704,98 @@ export const setupSocketHandlers = (io, redisClient) => {
         let publicRoom = null;
         let nearbyRooms = [];
         
-        try {
-          if (useMongoDb) {
-            // Find all active public rooms
-            const allPublicRooms = await ChatRoom.find({
-              roomType: 'public',
-              isActive: true
-            });
-            
-            // Filter by distance and capacity
-            for (const room of allPublicRooms) {
-              if (room.participants.length >= MAX_ROOM_SIZE) continue;
+        // Only search for rooms if we are not forcing creation
+        if (action !== 'create') {
+          try {
+            if (useMongoDb) {
+              // Find all active public rooms
+              const allPublicRooms = await ChatRoom.find({
+                roomType: 'public',
+                isActive: true
+              });
               
-              // Get creator's location from their session
-              const creatorSession = await ActiveSession.findOne({ sessionId: room.creatorSessionId });
-              if (!creatorSession || !creatorSession.location) continue;
+              // Filter by distance and capacity
+              for (const room of allPublicRooms) {
+                if (room.participants.length >= MAX_ROOM_SIZE) continue;
+                
+                // Get creator's location from their session
+                // Or use room location if available (preferred)
+                let roomLat, roomLong;
+                
+                if (room.location && room.location.latitude) {
+                  roomLat = room.location.latitude;
+                  roomLong = room.location.longitude;
+                } else {
+                  const creatorSession = await ActiveSession.findOne({ sessionId: room.creatorSessionId });
+                  if (!creatorSession || !creatorSession.location) continue;
+                  roomLat = creatorSession.location.latitude;
+                  roomLong = creatorSession.location.longitude;
+                }
+                
+                const distance = inMemoryStorage.calculateDistance(
+                  location.latitude,
+                  location.longitude,
+                  roomLat,
+                  roomLong
+                );
+                
+                if (distance <= NEARBY_RADIUS) {
+                  nearbyRooms.push({ room, distance });
+                }
+              }
               
-              const distance = inMemoryStorage.calculateDistance(
-                location.latitude,
-                location.longitude,
-                creatorSession.location.latitude,
-                creatorSession.location.longitude
-              );
+              // Sort by distance and pick closest
+              if (nearbyRooms.length > 0) {
+                nearbyRooms.sort((a, b) => a.distance - b.distance);
+                publicRoom = nearbyRooms[0].room;
+              }
+            } else {
+              // In-memory search
+              const allRooms = Array.from(inMemoryStorage.chatRooms.values());
+              for (const room of allRooms) {
+                if (room.roomType !== 'public' || !room.isActive || room.participants.length >= MAX_ROOM_SIZE) continue;
+                
+                let roomLat, roomLong;
+                if (room.location) {
+                  roomLat = room.location.latitude;
+                  roomLong = room.location.longitude;
+                } else {
+                  // Fallback to finding creator session in memory
+                  // This is tricky in memory if we don't have easy access, but let's assume room.location is set for public rooms
+                  continue; 
+                }
+                
+                const distance = inMemoryStorage.calculateDistance(
+                  location.latitude,
+                  location.longitude,
+                  roomLat,
+                  roomLong
+                );
+                
+                if (distance <= NEARBY_RADIUS) {
+                  nearbyRooms.push({ room, distance });
+                }
+              }
               
-              if (distance <= NEARBY_RADIUS) {
-                nearbyRooms.push({ room, distance });
+              // Sort by distance and pick closest
+              if (nearbyRooms.length > 0) {
+                nearbyRooms.sort((a, b) => a.distance - b.distance);
+                publicRoom = nearbyRooms[0].room;
               }
             }
-            
-            // Sort by distance and pick closest
-            if (nearbyRooms.length > 0) {
-              nearbyRooms.sort((a, b) => a.distance - b.distance);
-              publicRoom = nearbyRooms[0].room;
-            }
-          } else {
-            // In-memory search
-            const allRooms = Array.from(inMemoryStorage.chatRooms.values());
-            for (const room of allRooms) {
-              if (room.roomType !== 'public' || !room.isActive || room.participants.length >= MAX_ROOM_SIZE) continue;
-              if (!room.location) continue;
-              
-              const distance = inMemoryStorage.calculateDistance(
-                location.latitude,
-                location.longitude,
-                room.location.latitude,
-                room.location.longitude
-              );
-              
-              if (distance <= NEARBY_RADIUS) {
-                nearbyRooms.push({ room, distance });
-              }
-            }
-            
-            // Sort by distance and pick closest
-            if (nearbyRooms.length > 0) {
-              nearbyRooms.sort((a, b) => a.distance - b.distance);
-              publicRoom = nearbyRooms[0].room;
-            }
-          }
-        } catch (error) {
-          useMongoDb = false;
-          const allRooms = Array.from(inMemoryStorage.chatRooms.values());
-          for (const room of allRooms) {
-            if (room.roomType !== 'public' || !room.isActive || room.participants.length >= MAX_ROOM_SIZE) continue;
-            if (!room.location) continue;
-            
-            const distance = inMemoryStorage.calculateDistance(
-              location.latitude,
-              location.longitude,
-              room.location.latitude,
-              room.location.longitude
-            );
-            
-            if (distance <= NEARBY_RADIUS) {
-              nearbyRooms.push({ room, distance });
-            }
-          }
-          
-          // Sort by distance and pick closest
-          if (nearbyRooms.length > 0) {
-            nearbyRooms.sort((a, b) => a.distance - b.distance);
-            publicRoom = nearbyRooms[0].room;
+          } catch (error) {
+            console.error('Error searching for public rooms:', error);
           }
         }
         
-        // If no room found, create a new public room
+        // If no room found
         if (!publicRoom) {
+          // If user explicitly wanted to JOIN, but no room found
+          if (action === 'join') {
+            socket.emit('error', { message: 'No public rooms found nearby. Try creating one!' });
+            return;
+          }
+
           console.log('📢 Creating new nearby public room...');
           const roomId = generateRoomId();
           
@@ -896,7 +908,8 @@ export const setupSocketHandlers = (io, redisClient) => {
         socket.emit('named_room_joined', {
           roomId: publicRoom.roomId,
           roomName: 'Public Chat Room',
-          participantCount: participantCount
+          participantCount: participantCount,
+          roomType: 'public'
         });
         
         // Notify existing participants
@@ -947,6 +960,127 @@ export const setupSocketHandlers = (io, redisClient) => {
       if (!roomId) return;
       
       handleFileDropLeave(socket, roomId, io, fileDropRooms);
+    });
+
+    // Handle leaving a chat room explicitly
+    socket.on('leave_room', async () => {
+      if (!userSession) return;
+      
+      console.log(`🚪 User requesting to leave room: ${userSession.codename}`);
+      
+      try {
+        let chatRoom = null;
+        if (userSession.chatRoomId) {
+          if (useMongoDb) {
+            chatRoom = await ChatRoom.findOne({ roomId: userSession.chatRoomId });
+          } else {
+            chatRoom = await inMemoryStorage.findChatRoom({ roomId: userSession.chatRoomId });
+          }
+        }
+        
+        if (chatRoom) {
+          const isMultiUserRoom = chatRoom.roomType === 'named' || chatRoom.roomType === 'public';
+          const remainingParticipants = chatRoom.participants.filter(p => p.sessionId !== userSession.sessionId);
+          
+          if (isMultiUserRoom && remainingParticipants.length > 0) {
+            // Multi-user room: remove user but keep room active
+            console.log(`👥 Removing user from multi-user room. ${remainingParticipants.length} users remaining.`);
+            
+            try {
+              if (useMongoDb) {
+                await ChatRoom.updateOne(
+                  { roomId: chatRoom.roomId },
+                  { 
+                    $pull: { participants: { sessionId: userSession.sessionId } },
+                    lastActivity: new Date()
+                  }
+                );
+              } else {
+                await inMemoryStorage.updateChatRoom(chatRoom.roomId, {
+                  participants: remainingParticipants,
+                  lastActivity: new Date()
+                });
+              }
+            } catch (error) {
+              console.error('Error updating room on leave:', error);
+            }
+            
+            // Notify remaining users
+            io.to(chatRoom.roomId).emit('user_left_room', {
+              codename: userSession.codename,
+              participantCount: remainingParticipants.length
+            });
+            
+            // Update room info for remaining users
+            remainingParticipants.forEach(participant => {
+              const participantSocket = io.sockets.sockets.get(participant.socketId);
+              if (participantSocket) {
+                participantSocket.emit('room_updated', {
+                  roomName: chatRoom.roomName || 'Public Chat Room',
+                  participantCount: remainingParticipants.length
+                });
+              }
+            });
+            
+          } else {
+            // Proximity room or last user leaving: close/delete the room
+            console.log(`🔒 Closing room (empty or proximity): ${chatRoom.roomId}`);
+            
+            // Clear timeout
+            clearChatTimeout(chatRoom.roomId, chatTimeouts);
+            
+            // Notify others if any (e.g. in proximity room)
+            remainingParticipants.forEach(participant => {
+              const otherSocket = io.sockets.sockets.get(participant.socketId);
+              if (otherSocket) {
+                otherSocket.emit('partner_disconnected', {
+                  message: 'Your chat partner has left the room'
+                });
+                otherSocket.leave(chatRoom.roomId);
+              }
+            });
+            
+            // Delete the room
+            try {
+              if (useMongoDb) {
+                await ChatRoom.deleteOne({ roomId: chatRoom.roomId });
+                console.log(`🗑️ Deleted chat room from MongoDB: ${chatRoom.roomId}`);
+              } else {
+                await inMemoryStorage.deleteChatRoom(chatRoom.roomId);
+                console.log(`🗑️ Deleted chat room from memory: ${chatRoom.roomId}`);
+              }
+            } catch (error) {
+              console.error('Error deleting room:', error);
+            }
+          }
+          
+          // Update user session to remove room reference
+          try {
+            if (useMongoDb) {
+              await ActiveSession.updateOne(
+                { sessionId: userSession.sessionId },
+                { $unset: { chatRoomId: 1, connectedWith: 1 } }
+              );
+            } else {
+              await inMemoryStorage.updateSession(userSession.sessionId, { 
+                chatRoomId: null, 
+                connectedWith: null 
+              });
+            }
+          } catch (error) {
+            console.error('Error updating session on leave:', error);
+          }
+          
+          // Update local session object
+          userSession.chatRoomId = null;
+          userSession.connectedWith = null;
+          
+          // Leave the socket room
+          socket.leave(chatRoom.roomId);
+        }
+      } catch (err) {
+        console.error('Error in leave_room handler:', err);
+      }
     });
 
     socket.on('file_chunk', (data) => {
@@ -1038,6 +1172,7 @@ const fallbackProximitySearch = async (socket, userSession, redisClient, io, ses
           sessionId: { $ne: userSession.sessionId },
           isActive: true,
           connectedWith: null,
+          searchMode: 'proximity', // Only match with users looking for proximity chat
           location: {
             $geoWithin: {
               $centerSphere: [
@@ -1053,6 +1188,7 @@ const fallbackProximitySearch = async (socket, userSession, redisClient, io, ses
           session.sessionId !== userSession.sessionId &&
           session.isActive &&
           !session.connectedWith &&
+          session.searchMode === 'proximity' && // Only match with users looking for proximity chat
           session.location &&
           calculateDistance(userSession.location, session.location) <= userSession.searchRadius
         );

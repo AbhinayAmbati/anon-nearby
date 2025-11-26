@@ -36,6 +36,11 @@ const activeSessionSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  searchMode: {
+    type: String,
+    enum: ['proximity', 'public', 'private'],
+    default: 'proximity'
+  },
   createdAt: {
     type: Date,
     default: Date.now,
