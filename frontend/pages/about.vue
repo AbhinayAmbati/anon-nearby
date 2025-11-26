@@ -20,7 +20,7 @@
       </section>
 
       <!-- Mission Section -->
-      <section class="py-16 px-4 border-t border-green-400/20">
+      <section class="py-16 px-4 border-green-400/20">
         <div class="max-w-4xl mx-auto">
           <h2 class="text-3xl font-bold mb-8 text-center">OUR MISSION</h2>
           <div class="space-y-6 text-green-400/80 leading-relaxed">
@@ -36,8 +36,73 @@
         </div>
       </section>
 
+      <!-- Three Ways to Connect -->
+      <section class="py-16 px-4 border-green-400/20">
+        <div class="max-w-6xl mx-auto">
+          <h2 class="text-3xl font-bold mb-12 text-center">THREE WAYS TO CONNECT</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Proximity Chat -->
+            <div class="bg-black/40 border border-green-400/30 p-8 backdrop-blur-sm hover:border-green-400 transition-all group">
+              <div class="w-16 h-16 mb-6 border-2 border-green-400 rounded-full flex items-center justify-center group-hover:animate-pulse mx-auto">
+                <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold mb-4 text-center text-green-400">Proximity Chat</h3>
+              <p class="text-green-400/70 text-center leading-relaxed mb-4">
+                Auto-match with a random person within your search radius (500m - 5km).
+              </p>
+              <ul class="text-sm text-green-400/60 space-y-2">
+                <li class="flex items-center justify-center"><span class="mr-2">✓</span> 1-on-1 Private Chat</li>
+                <li class="flex items-center justify-center"><span class="mr-2">✓</span> Random Matching</li>
+                <li class="flex items-center justify-center"><span class="mr-2">✓</span> Ephemeral</li>
+              </ul>
+            </div>
+
+            <!-- Public Rooms -->
+            <div class="bg-black/40 border border-green-400/30 p-8 backdrop-blur-sm hover:border-green-400 transition-all group">
+              <div class="w-16 h-16 mb-6 border-2 border-green-400 rounded-full flex items-center justify-center group-hover:animate-pulse mx-auto">
+                <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold mb-4 text-center text-green-400">Public Rooms</h3>
+              <p class="text-green-400/70 text-center leading-relaxed mb-4">
+                Join or create location-based public chat rooms visible to everyone nearby.
+              </p>
+              <ul class="text-sm text-green-400/60 space-y-2">
+                <li class="flex items-center justify-center"><span class="mr-2">✓</span> Group Chat</li>
+                <li class="flex items-center justify-center"><span class="mr-2">✓</span> Location Based</li>
+                <li class="flex items-center justify-center"><span class="mr-2">✓</span> Open to All</li>
+              </ul>
+            </div>
+
+            <!-- Private Rooms -->
+            <div class="bg-black/40 border border-green-400/30 p-8 backdrop-blur-sm hover:border-green-400 transition-all group">
+              <div class="w-16 h-16 mb-6 border-2 border-green-400 rounded-full flex items-center justify-center group-hover:animate-pulse mx-auto">
+                <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold mb-4 text-center text-green-400">Private Rooms</h3>
+              <p class="text-green-400/70 text-center leading-relaxed mb-4">
+                Create a named room and share the link directly with friends.
+              </p>
+              <ul class="text-sm text-green-400/60 space-y-2">
+                <li class="flex items-center justify-center"><span class="mr-2">✓</span> Invite Only</li>
+                <li class="flex items-center justify-center"><span class="mr-2">✓</span> Shareable Link</li>
+                <li class="flex items-center justify-center"><span class="mr-2">✓</span> No Location Needed</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       <!-- How It Works -->
-      <section class="py-16 px-4 border-t border-green-400/20">
+      <section class="py-16 px-4 border-green-400/20">
         <div class="max-w-4xl mx-auto">
           <h2 class="text-3xl font-bold mb-12 text-center">HOW IT WORKS</h2>
           <div class="space-y-8">
@@ -75,10 +140,10 @@
                 3
               </div>
               <div>
-                <h3 class="text-xl font-bold mb-2">Smart Matchmaking</h3>
+                <h3 class="text-xl font-bold mb-2">Choose Connection Mode</h3>
                 <p class="text-green-400/70">
-                  Our intelligent algorithm scans for nearby users and creates optimal matches based on distance, wait time, 
-                  and compatibility. When a match is found, you're instantly connected.
+                  Select how you want to connect: <strong>Proximity</strong> for random 1-on-1 chats, 
+                  <strong>Public Room</strong> for local group chats, or <strong>Private Room</strong> to invite friends via link.
                 </p>
               </div>
             </div>
@@ -115,7 +180,7 @@
       </section>
 
       <!-- New Feature: File Drop -->
-      <section class="py-16 px-4 border-t border-green-400/20">
+      <section class="py-16 px-4 border-green-400/20">
         <div class="max-w-4xl mx-auto">
           <h2 class="text-3xl font-bold mb-12 text-center">NEW: EPHEMERAL FILE RELAY</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
@@ -160,7 +225,7 @@
       </section>
 
       <!-- Technical Architecture -->
-      <section class="py-16 px-4 border-t border-green-400/20">
+      <section class="py-16 px-4 border-green-400/20">
         <div class="max-w-4xl mx-auto">
           <h2 class="text-3xl font-bold mb-12 text-center">TECHNICAL ARCHITECTURE</h2>
           
@@ -259,7 +324,7 @@
       </section>
 
       <!-- Privacy Principles -->
-      <section class="py-16 px-4 border-t border-green-400/20">
+      <section class="py-16 px-4 border-green-400/20">
         <div class="max-w-4xl mx-auto">
           <h2 class="text-3xl font-bold mb-12 text-center">PRIVACY PRINCIPLES</h2>
           
@@ -294,7 +359,7 @@
       </section>
 
       <!-- Open Source -->
-      <section class="py-16 px-4 border-t border-green-400/20">
+      <section class="py-16 px-4 border-green-400/20">
         <div class="max-w-4xl mx-auto text-center">
           <h2 class="text-3xl font-bold mb-6">OPEN SOURCE</h2>
           <p class="text-green-400/70 text-lg mb-8 leading-relaxed">
