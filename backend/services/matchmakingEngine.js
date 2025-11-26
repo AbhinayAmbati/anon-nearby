@@ -49,6 +49,9 @@ class SmartMatchmakingEngine {
         // Add to wait queue with timestamp as score
         await this.redis.zadd(this.keys.waitQueue, timestamp, userId);
         
+        // Set TTL on wait queue (2 hours = 7200 seconds)
+        await this.redis.expire(this.keys.waitQueue, 7200);
+        
         // Initialize user session stats if not exists
         await this.initializeSessionStats(userId, userSession);
         
@@ -88,6 +91,9 @@ class SmartMatchmakingEngine {
 
     if (this.useRedis) {
       await this.redis.hset(this.keys.sessionStats, userId, JSON.stringify(stats));
+      
+      // Set TTL on session stats hash (2 hours = 7200 seconds)
+      await this.redis.expire(this.keys.sessionStats, 7200);
     } else {
       this.memoryStorage.sessionStats.set(userId, stats);
     }
@@ -405,6 +411,9 @@ class SmartMatchmakingEngine {
       
       if (this.useRedis) {
         await this.redis.hset(this.keys.sessionStats, userId, JSON.stringify(stats));
+      
+      // Set TTL on session stats hash (2 hours = 7200 seconds)
+      await this.redis.expire(this.keys.sessionStats, 7200);
       } else {
         this.memoryStorage.sessionStats.set(userId, stats);
       }

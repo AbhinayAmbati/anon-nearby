@@ -101,6 +101,9 @@ export const setupSocketHandlers = (io, redisClient) => {
               member: sessionId
             });
             
+            // Set TTL on user_locations key (2 hours = 7200 seconds)
+            await redisClient.expire('user_locations', 7200);
+            
             // Store session mapping in Redis
             await redisClient.hSet(`session:${sessionId}`, {
               socketId: socket.id,
@@ -109,6 +112,9 @@ export const setupSocketHandlers = (io, redisClient) => {
               longitude,
               isActive: 'true'
             });
+            
+            // Set TTL on session key (2 hours = 7200 seconds)
+            await redisClient.expire(`session:${sessionId}`, 7200);
           } else {
             throw new Error('Redis not available');
           }
@@ -332,7 +338,7 @@ export const setupSocketHandlers = (io, redisClient) => {
     // Handle manual chat disconnection
     socket.on('disconnect_chat', async () => {
       console.log(`🔴 User requested chat disconnect: ${socket.id}`);
-      await handleUserDisconnection(socket, userSession, redisClient, io, chatTimeouts);
+      await handleUserDisconnection(socket, userSession, redisClient, io, chatTimeouts, matchmakingEngine);
       // Reset local session since it's deleted in cleanup
       userSession = null;
     });
@@ -352,7 +358,7 @@ export const setupSocketHandlers = (io, redisClient) => {
       }
       
       sessionsBySocketId.delete(socket.id);
-      await handleUserDisconnection(socket, userSession, redisClient, io, chatTimeouts);
+      await handleUserDisconnection(socket, userSession, redisClient, io, chatTimeouts, matchmakingEngine);
     });
 
     // Handle manual leave
@@ -370,7 +376,7 @@ export const setupSocketHandlers = (io, redisClient) => {
       }
       
       sessionsBySocketId.delete(socket.id);
-      await handleUserDisconnection(socket, userSession, redisClient, io, chatTimeouts);
+      await handleUserDisconnection(socket, userSession, redisClient, io, chatTimeouts, matchmakingEngine);
     });
 
     // --- File Drop Handlers ---
@@ -820,7 +826,7 @@ const handleChatTimeout = async (roomId, io, chatTimeouts) => {
 };
 
 // Handle user disconnection and cleanup
-const handleUserDisconnection = async (socket, userSession, redisClient, io, chatTimeouts) => {
+const handleUserDisconnection = async (socket, userSession, redisClient, io, chatTimeouts, matchmakingEngine) => {
   if (!userSession) return;
   
   try {
@@ -917,6 +923,15 @@ const handleUserDisconnection = async (socket, userSession, redisClient, io, cha
     } catch (error) {
       useRedis = false;
       console.log('📝 Redis cleanup failed, relying on in-memory cleanup');
+    }
+    
+    // Clean up matchmaking engine data
+    if (matchmakingEngine) {
+      try {
+        await matchmakingEngine.cleanupUserData(userSession.sessionId);
+      } catch (error) {
+        console.error('Error cleaning up matchmaking data:', error);
+      }
     }
     
     // Completely delete the user session
