@@ -478,6 +478,32 @@ class SmartMatchmakingEngine {
     // For now, return null - you'll need to integrate this with your sessionsBySocketId
     return null;
   }
+
+  /**
+   * Clean up all user data from Redis when they disconnect
+   */
+  async cleanupUserData(userId) {
+    try {
+      if (this.useRedis) {
+        // Remove from wait queue
+        await this.redis.zrem(this.keys.waitQueue, userId);
+        
+        // Remove session stats
+        await this.redis.hdel(this.keys.sessionStats, userId);
+        
+        console.log(`🧹 Cleaned up matchmaking data for user: ${userId}`);
+      } else {
+        // Fallback to memory storage cleanup
+        this.memoryStorage.waitQueue.delete(userId);
+        this.memoryStorage.sessionStats.delete(userId);
+      }
+    } catch (error) {
+      console.error('Error cleaning up user data from matchmaking:', error);
+      // Fallback to memory cleanup on error
+      this.memoryStorage.waitQueue.delete(userId);
+      this.memoryStorage.sessionStats.delete(userId);
+    }
+  }
 }
 
 export default SmartMatchmakingEngine;
