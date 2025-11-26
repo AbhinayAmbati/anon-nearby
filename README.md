@@ -10,13 +10,25 @@ New in v2.0: **Ephemeral File Relay** allows users to securely share files with 
 
 ## Core Functionality
 
-The application assigns users creative codenames like "CipherNode_42" or "VectorStar_73" to maintain anonymity while adding personality. Using geolocation services, it identifies other active users within proximity and facilitates instant chat connections through an intelligent matchmaking system.
+The application assigns users creative codenames like "CipherNode_42" or "VectorStar_73" to maintain anonymity while adding personality. Users can choose how they want to connect:
 
-Conversations are completely ephemeral - once either participant disconnects, all messages are permanently deleted. No history is maintained, ensuring true anonymity and privacy.
+### 1. Proximity Chat (1-on-1)
+Auto-match with a random person within your search radius (500m - 5km). Perfect for spontaneous conversations with people physically near you.
+- **Requires Location**: Yes
+- **Privacy**: High (1-on-1, ephemeral)
+- **Matching**: Automatic based on distance
 
-**Smart Matchmaking Engine**: Advanced algorithm uses distance-based ranking, wait-time scoring, compatibility analysis, and freshness scoring to create optimal connections between users. The system considers multiple factors including search radius compatibility, behavioral patterns, and connection history to enhance match quality.
+### 2. Public Rooms (Group)
+Create or join location-based public chat rooms. Anyone nearby can see and join these rooms. Great for local events, campus discussions, or neighborhood chatter.
+- **Requires Location**: Yes
+- **Privacy**: Public (anyone nearby can join)
+- **Persistence**: Room stays active as long as users are present
 
-
+### 3. Private Rooms (Group)
+Create a named room and share the link directly with friends. No location required for joining via link.
+- **Requires Location**: No (for joining via link)
+- **Privacy**: Private (invite-only via link)
+- **Features**: Shareable URL, copy-to-clipboard
 
 **Ephemeral File Relay**: A secure, serverless-like file transfer system. Files are encrypted client-side using the Web Crypto API before being relayed in chunks through the server. The server never sees the original file or the encryption keys, ensuring complete privacy.
 
@@ -39,8 +51,6 @@ Utilizes Redis GEO commands for efficient proximity searches within the configur
 **Anonymous Sessions**: No registration, accounts, or personal information required. Users are identified only by temporary codenames during active sessions.
 
 **Smart Proximity Matching**: Intelligent algorithm discovers and connects users within customizable radius (500m-5km) using multi-factor scoring including distance, wait-time, compatibility, and freshness.
-
-
 
 **Real-Time Communication**: Instant message delivery with Socket.IO for responsive chat experiences, including typing indicators and connection status.
 
@@ -109,15 +119,21 @@ If database connections fail, the application automatically falls back to in-mem
 
 1. **Session Initialization**: User accesses the application and receives a randomly generated codename for anonymous identification.
 
-2. **Location Permission**: Application requests geolocation access to determine user's current coordinates.
+2. **Mode Selection**: User chooses their preferred connection method from the dashboard:
+   - **Proximity**: Requests location to auto-match with random nearby users.
+   - **Public Room**: Requests location to join or create a local group chat.
+   - **Private Room**: Creates a named room with a shareable link for friends.
 
-3. **Proximity Scanning**: Backend continuously searches for other active users within the configured radius using Redis geospatial queries.
+3. **Connection Establishment**:
+   - *Proximity*: Backend scans for active users within radius and pairs them.
+   - *Public*: User joins a persistent room anchored to their location.
+   - *Private*: User shares the generated link; others join via URL.
 
-4. **Automatic Matching**: When compatible users are found, they are instantly connected to a private chat room.
+4. **Real-Time Communication**: Users exchange messages and files through Socket.IO. Messages are ephemeral and exist only in memory.
 
-5. **Real-Time Communication**: Users can exchange messages through Socket.IO-powered real-time messaging.
-
-6. **Session Termination**: When either user disconnects, the chat room and all associated data are immediately destroyed.
+5. **Session Termination**: 
+   - *Proximity*: Chat ends when either user leaves.
+   - *Group Rooms*: Room persists until the last user leaves.
 
 ## Technical Implementation Details
 
