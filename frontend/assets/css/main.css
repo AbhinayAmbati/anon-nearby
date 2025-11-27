@@ -52,41 +52,64 @@ body {
     transform: translateY(-100px);
     opacity: 0;
   }
+
   10% {
     opacity: 0.7;
   }
+
   90% {
     opacity: 0.7;
   }
+
   100% {
     transform: translateY(100vh);
     opacity: 0;
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Enhanced Matrix Theme */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
   background: var(--matrix-bg);
+  border-left: 1px solid var(--matrix-border);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--matrix-dark-green);
-  border-radius: 4px;
+  background: linear-gradient(180deg, var(--matrix-dark-green) 0%, #004d0a 100%);
+  border-radius: 6px;
+  border: 2px solid var(--matrix-bg);
+  transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--matrix-green) 0%, var(--matrix-dark-green) 100%);
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+  border-color: var(--matrix-dark-green);
+}
+
+::-webkit-scrollbar-thumb:active {
   background: var(--matrix-green);
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.8);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--matrix-dark-green) var(--matrix-bg);
 }
 
 /* Loading animations */
 @keyframes pulse-green {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -100,6 +123,7 @@ body {
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
   }
