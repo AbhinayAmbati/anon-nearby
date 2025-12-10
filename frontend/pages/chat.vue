@@ -240,8 +240,8 @@
         </div>
 
         <!-- Chat State -->
-        <div v-else-if="appState === 'chatting'" key="chatting" class="flex flex-col h-screen">
-          <div class="flex-1 flex flex-col w-full max-w-4xl mx-auto p-4 sm:p-6">
+        <div v-else-if="appState === 'chatting'" key="chatting" class="flex flex-col h-[calc(100vh-4rem)]">
+          <div class="flex-1 flex flex-col w-full max-w-4xl mx-auto p-4 sm:p-6 min-h-0">
             <div class="bg-black/40 backdrop-blur-sm rounded-lg border border-green-400/30 overflow-hidden flex flex-col h-full">
               <!-- Chat header -->
               <div class="bg-black/60 backdrop-blur-sm px-3 sm:px-4 py-2 sm:py-3 border-b border-green-400/30 flex justify-between items-center flex-shrink-0">
@@ -281,7 +281,7 @@
               </div>
               
               <!-- Messages area -->
-              <div class="flex-1 p-3 sm:p-4 overflow-y-auto" ref="messagesContainer">
+              <div class="flex-1 p-3 sm:p-4 overflow-y-auto min-h-0" ref="messagesContainer">
                 <div v-if="messages.length === 0" class="text-center text-green-400/60 py-4 sm:py-8 text-sm sm:text-base">
                   Start your anonymous conversation...
                 </div>
